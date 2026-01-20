@@ -70,7 +70,7 @@ jobs:
           python scripts/compare-evaluation-results.py
       
       - name: Upload Evaluation Results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: evaluation-results-$(date +%Y%m%d)
           path: evaluation-results/

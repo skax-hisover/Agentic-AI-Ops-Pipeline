@@ -1,0 +1,87 @@
+name: Build Agent
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'agents/**'
+      - 'scripts/**'
+      - '.github/workflows/build-pipeline.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'agents/**'
+      - 'scripts/**'
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  validate:
+    name: Validate Agent Definitions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Validate Agent Definition
+        run: |
+          python scripts/validate-agent-definition.py agents/*/agent-definition.yaml
+      
+      - name: Validate Prompts
+        run: |
+          python scripts/validate-prompts.py agents/*/prompts/
+      
+      - name: Validate Tool Definitions
+        run: |
+          python scripts/validate-tools.py agents/*/tools/tool-definitions.yaml
+      
+      - name: Check Security
+        run: |
+          python scripts/check-security-policies.py agents/*/
+
+  build:
+    name: Build Agent Artifacts
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Build Agent Artifacts
+        run: |
+          for agent_dir in agents/*/; do
+            agent_name=$(basename "$agent_dir")
+            echo "Building agent: $agent_name"
+            python scripts/build-agent.py --agent-dir "$agent_dir"
+          done
+      
+      - name: Package Artifacts
+        run: |
+          mkdir -p build
+          tar -czf agent-artifacts.tar.gz build/
+      
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: agent-artifacts
+          path: agent-artifacts.tar.gz
+          retention-days: 7

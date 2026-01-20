@@ -1,0 +1,59 @@
+# agent-definition.yaml
+apiVersion: agent.ai/v1
+kind: Agent
+metadata:
+  name: customer-support-agent
+  version: 1.0.0
+  description: 고객 지원을 위한 AI Agent
+spec:
+  foundationModel:
+    provider: aws  # aws, azure, gcp
+    modelId: anthropic.claude-3-sonnet
+    temperature: 0.7
+    maxTokens: 2048
+  
+  prompts:
+    systemPrompt: prompts/system-prompt.md
+    userPromptTemplate: prompts/user-prompt-template.md
+    version: v1.2.0
+  
+  tools:
+    - name: search-knowledge-base
+      type: function
+      definition: tools/tool-definitions.yaml#search-kb
+    - name: create-ticket
+      type: api
+      endpoint: https://api.example.com/tickets
+      authentication: oauth2
+  
+  knowledgeBase:
+    enabled: true
+    dataSources:
+      - type: s3
+        bucket: agent-knowledge-base
+        path: documents/
+      - type: database
+        connectionString: ${DB_CONNECTION_STRING}
+    embeddingModel: text-embedding-ada-002
+    vectorStore: opensearch
+  
+  security:
+    guardrails:
+      enabled: true
+      contentFilter: moderate
+      piiDetection: true
+    permissions:
+      - resource: "s3://agent-data/*"
+        actions: ["read"]
+  
+  observability:
+    logging:
+      level: INFO
+      destinations: [cloudwatch, datadog]
+    metrics:
+      - latency
+      - tokenUsage
+      - errorRate
+    tracing:
+      enabled: true
+      provider: xray

@@ -1,0 +1,28 @@
+# data-sources.yaml
+dataSources:
+  - id: s3-documents
+    type: s3
+    bucket: agent-knowledge-base
+    path: documents/
+    fileTypes:
+      - pdf
+      - txt
+      - md
+    syncSchedule: "0 */6 * * *"  # 6시간마다 동기화
+    enabled: true
+
+  - id: database-faq
+    type: database
+    connectionString: ${DB_CONNECTION_STRING}
+    query: "SELECT id, question, answer FROM faq WHERE active = true"
+    syncSchedule: "0 */1 * * *"  # 1시간마다 동기화
+    enabled: true
+
+  - id: api-docs
+    type: api
+    endpoint: https://api.example.com/docs
+    authentication:
+      type: oauth2
+      tokenUrl: ${OAUTH_TOKEN_URL}
+    syncSchedule: "0 0 * * *"  # 매일 자정에 동기화
+    enabled: false

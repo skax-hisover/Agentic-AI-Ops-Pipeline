@@ -1,0 +1,80 @@
+{
+  "dataset": {
+    "name": "Customer Support Agent Evaluation Dataset",
+    "version": "1.0.0",
+    "createdAt": "2024-01-01T00:00:00Z"
+  },
+  "testCases": [
+    {
+      "id": "tc-001",
+      "input": "고객이 제품 반품을 요청했습니다",
+      "expectedOutput": {
+        "intent": "return_request",
+        "requiredTools": ["search-knowledge-base"],
+        "expectedResponse": "반품 절차에 대한 안내",
+        "minRelevanceScore": 0.7
+      },
+      "context": {
+        "userRole": "customer",
+        "sessionHistory": []
+      },
+      "evaluationCriteria": {
+        "accuracy": 0.8,
+        "relevance": 0.8,
+        "completeness": 0.7
+      }
+    },
+    {
+      "id": "tc-002",
+      "input": "배송이 지연되고 있어요",
+      "expectedOutput": {
+        "intent": "delivery_inquiry",
+        "requiredTools": ["search-knowledge-base", "create-ticket"],
+        "expectedResponse": "배송 지연에 대한 안내 및 티켓 생성",
+        "minRelevanceScore": 0.7
+      },
+      "context": {
+        "userRole": "customer",
+        "sessionHistory": []
+      },
+      "evaluationCriteria": {
+        "accuracy": 0.8,
+        "relevance": 0.8,
+        "completeness": 0.7
+      }
+    },
+    {
+      "id": "tc-003",
+      "input": "제품 사용법을 알려주세요",
+      "expectedOutput": {
+        "intent": "product_inquiry",
+        "requiredTools": ["search-knowledge-base"],
+        "expectedResponse": "제품 사용법 안내",
+        "minRelevanceScore": 0.7
+      },
+      "context": {
+        "userRole": "customer",
+        "sessionHistory": []
+      },
+      "evaluationCriteria": {
+        "accuracy": 0.8,
+        "relevance": 0.8,
+        "completeness": 0.7
+      }
+    }
+  ],
+  "evaluationMetrics": [
+    "accuracy",
+    "relevance",
+    "completeness",
+    "responseTime",
+    "toolUsageCorrectness"
+  ],
+  "thresholds": {
+    "accuracy": 0.75,
+    "relevance": 0.75,
+    "completeness": 0.70,
+    "responseTime": 5.0,
+    "overall": 0.75
+  }
+}

@@ -1,0 +1,18 @@
+# embedding-config.yaml
+embedding:
+  model: text-embedding-ada-002
+  provider: aws  # aws, azure, gcp
+  dimensions: 1536
+  chunkSize: 1000
+  chunkOverlap: 200
+
+vectorStore:
+  type: opensearch
+  endpoint: ${OPENSEARCH_ENDPOINT}
+  indexName: customer-support-kb
+  region: us-east-1
+
+indexing:
+  batchSize: 100
+  maxConcurrency: 5
+  retryAttempts: 3

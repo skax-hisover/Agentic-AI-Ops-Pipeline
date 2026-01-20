@@ -1,0 +1,22 @@
+# Python 의존성 패키지
+pyyaml>=6.0
+jsonschema>=4.17.0
+
+# 테스트 프레임워크
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-mock>=3.11.0
+
+# AWS SDK (선택사항)
+boto3>=1.28.0
+
+# Azure SDK (선택사항)
+# azure-identity>=1.14.0
+# azure-ai-openai>=1.0.0
+
+# GCP SDK (선택사항)
+# google-cloud-dialogflow>=2.28.0
+# google-cloud-aiplatform>=1.38.0
+
+# 유틸리티
+requests>=2.31.0

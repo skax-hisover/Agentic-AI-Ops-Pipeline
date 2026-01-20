@@ -1,0 +1,55 @@
+# tool-definitions.yaml
+tools:
+  search-kb:
+    name: search-knowledge-base
+    description: Knowledge Base에서 관련 정보를 검색합니다.
+    parameters:
+      - name: query
+        type: string
+        description: 검색할 질문이나 키워드
+        required: true
+      - name: max_results
+        type: integer
+        description: 반환할 최대 결과 수
+        default: 5
+    returns:
+      type: array
+      items:
+        type: object
+        properties:
+          title:
+            type: string
+          content:
+            type: string
+          relevance_score:
+            type: number
+
+  create-ticket:
+    name: create-ticket
+    description: 고객 지원 티켓을 생성합니다.
+    parameters:
+      - name: title
+        type: string
+        description: 티켓 제목
+        required: true
+      - name: description
+        type: string
+        description: 티켓 설명
+        required: true
+      - name: priority
+        type: string
+        enum: [low, medium, high, urgent]
+        default: medium
+      - name: customer_id
+        type: string
+        description: 고객 ID
+        required: true
+    returns:
+      type: object
+      properties:
+        ticket_id:
+          type: string
+        status:
+          type: string
+        created_at:
+          type: string

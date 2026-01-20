@@ -1,0 +1,49 @@
+# integration-tests.yaml
+testSuite:
+  name: Customer Support Agent Integration Tests
+  version: 1.0.0
+
+tests:
+  - name: test_knowledge_base_search
+    type: integration
+    description: Knowledge Base 검색 통합 테스트
+    prerequisites:
+      - knowledge_base_synced: true
+    input:
+      query: "반품 정책은 무엇인가요?"
+      max_results: 3
+    expected:
+      results_count: ">= 1"
+      first_result_contains: "반품"
+    timeout: 10
+
+  - name: test_ticket_creation_workflow
+    type: integration
+    description: 티켓 생성 워크플로우 테스트
+    prerequisites:
+      - api_available: true
+    input:
+      title: "테스트 티켓"
+      description: "통합 테스트용 티켓입니다"
+      priority: "medium"
+      customer_id: "test_customer_001"
+    expected:
+      ticket_id_exists: true
+      status: "open"
+    timeout: 15
+
+  - name: test_end_to_end_conversation
+    type: integration
+    description: 전체 대화 흐름 테스트
+    input:
+      conversation:
+        - role: user
+          content: "제품 반품을 하고 싶어요"
+        - role: assistant
+          content: "반품 절차에 대해 안내해드리겠습니다"
+        - role: user
+          content: "어떻게 진행하나요?"
+    expected:
+      response_contains: ["절차", "안내"]
+      tools_used: ["search-knowledge-base"]
+    timeout: 30

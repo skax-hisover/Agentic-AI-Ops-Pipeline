@@ -1,0 +1,77 @@
+name: Agent Evaluation
+
+on:
+  schedule:
+    # 매일 자정에 실행
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    inputs:
+      agent_name:
+        description: 'Agent name to evaluate'
+        required: false
+        type: string
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  evaluate:
+    name: Run Agent Evaluation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Run Evaluation
+        run: |
+          if [ -n "${{ inputs.agent_name }}" ]; then
+            agent_dir="agents/${{ inputs.agent_name }}"
+            dataset_file="$agent_dir/tests/evaluation-dataset.json"
+            if [ -f "$dataset_file" ]; then
+              python scripts/run-evaluation.py \
+                --dataset "$dataset_file" \
+                --agent "$agent_dir"
+            fi
+          else
+            for agent_dir in agents/*/; do
+              agent_name=$(basename "$agent_dir")
+              dataset_file="$agent_dir/tests/evaluation-dataset.json"
+              if [ -f "$dataset_file" ]; then
+                echo "Running evaluation for agent: $agent_name"
+                python scripts/run-evaluation.py \
+                  --dataset "$dataset_file" \
+                  --agent "$agent_dir"
+              fi
+            done
+          fi
+      
+      - name: Generate Evaluation Report
+        run: |
+          python scripts/generate-evaluation-report.py
+      
+      - name: Compare with Baseline
+        run: |
+          python scripts/compare-evaluation-results.py
+      
+      - name: Upload Evaluation Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: evaluation-results-$(date +%Y%m%d)
+          path: evaluation-results/
+          retention-days: 90

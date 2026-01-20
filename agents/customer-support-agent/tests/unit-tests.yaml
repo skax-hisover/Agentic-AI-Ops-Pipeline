@@ -1,0 +1,42 @@
+# unit-tests.yaml
+testSuite:
+  name: Customer Support Agent Unit Tests
+  version: 1.0.0
+
+tests:
+  - name: test_prompt_rendering
+    type: unit
+    description: 프롬프트 템플릿 렌더링 테스트
+    input:
+      user_input: "제품 반품을 하고 싶어요"
+      context:
+        user_id: "user123"
+        session_id: "session456"
+    expected:
+      contains:
+        - "반품"
+        - "도움"
+    timeout: 5
+
+  - name: test_tool_definition_validation
+    type: unit
+    description: 도구 정의 검증 테스트
+    input:
+      tool_name: "search-knowledge-base"
+      parameters:
+        query: "반품 절차"
+    expected:
+      tool_exists: true
+      parameters_valid: true
+    timeout: 3
+
+  - name: test_agent_definition_loading
+    type: unit
+    description: Agent 정의 파일 로딩 테스트
+    input:
+      definition_file: "agent-definition.yaml"
+    expected:
+      metadata_name: "customer-support-agent"
+      metadata_version: "1.0.0"
+      spec_foundationModel_provider: "aws"
+    timeout: 2

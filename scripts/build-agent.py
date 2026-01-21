@@ -97,7 +97,11 @@ def build_aws_agent(agent_def: Dict[str, Any], agent_dir: str, output_dir: str):
 
 
 def build_azure_agent(agent_def: Dict[str, Any], agent_dir: str, output_dir: str):
-    """Azure OpenAI Assistant 형식으로 빌드"""
+    """Azure OpenAI Assistant 형식으로 빌드
+
+    한 파이프라인 안에서 AWS/Azure/GCP를 모두 지원할 수 있도록
+    AWS와 최대한 유사한 수준의 메타데이터(프롬프트, 도구, KB)를 포함한다.
+    """
     metadata = agent_def["metadata"]
     spec = agent_def["spec"]
     
@@ -106,19 +110,44 @@ def build_azure_agent(agent_def: Dict[str, Any], agent_dir: str, output_dir: str
     if "prompts" in spec and "systemPrompt" in spec["prompts"]:
         system_prompt = load_prompt(spec["prompts"]["systemPrompt"], agent_dir)
     
-    azure_config = {
-        "name": metadata["name"],
-        "model": spec["foundationModel"]["modelId"],
-        "instructions": system_prompt,
-        "tools": []
-    }
-    
-    # 도구 변환
+    # Azure Assistants API에서 기대하는 형태에 최대한 맞춘 구조 (단, 실제 생성은 별도 deploy 단계에서 수행)
+    tools_config = []
     for tool in spec.get("tools", []):
-        tool_def = {
-            "type": "function" if tool["type"] == "function" else "code_interpreter"
-        }
-        azure_config["tools"].append(tool_def)
+        if tool["type"] == "function":
+            tools_config.append(
+                {
+                    "type": "function",
+                    "function": {
+                        "name": tool["name"],
+                        # description, parameters 등은 필요 시 확장
+                    },
+                }
+            )
+        else:
+            # API 타입 도구는 단순 메타 정보만 남긴다
+            tools_config.append(
+                {
+                    "type": "api",
+                    "api": {
+                        "name": tool["name"],
+                        "endpoint": tool.get("endpoint", ""),
+                    },
+                }
+            )
+
+    azure_config = {
+        "assistant": {
+            "name": metadata["name"],
+            "model": spec["foundationModel"]["modelId"],
+            "instructions": system_prompt,
+            "tools": tools_config,
+            "metadata": {
+                "agentVersion": metadata.get("version", ""),
+            },
+        },
+        # Knowledge Base 설정도 함께 포함 (실제 Azure Search 연동은 deploy 단계에서 사용)
+        "knowledgeBase": spec.get("knowledgeBase", {}),
+    }
     
     # 출력 디렉토리 생성
     os.makedirs(output_dir, exist_ok=True)
@@ -132,7 +161,11 @@ def build_azure_agent(agent_def: Dict[str, Any], agent_dir: str, output_dir: str
 
 
 def build_gcp_agent(agent_def: Dict[str, Any], agent_dir: str, output_dir: str):
-    """GCP Vertex AI Agent 형식으로 빌드"""
+    """GCP Vertex AI Agent 형식으로 빌드
+
+    Vertex AI Agent / Agent Builder에서 필요한 기본 설정(표시 이름, 설명, 프롬프트 등)을
+    한 파이프라인 내에서 AWS/Azure와 동일한 레벨로 생성한다.
+    """
     metadata = agent_def["metadata"]
     spec = agent_def["spec"]
     
@@ -141,13 +174,22 @@ def build_gcp_agent(agent_def: Dict[str, Any], agent_dir: str, output_dir: str):
     if "prompts" in spec and "systemPrompt" in spec["prompts"]:
         system_prompt = load_prompt(spec["prompts"]["systemPrompt"], agent_dir)
     
+    # GCP Agent 설정 (Vertex AI Agent Builder 기준의 추상화된 형태)
     gcp_config = {
-        "displayName": metadata["name"],
-        "defaultLanguageCode": "ko",
-        "timeZone": "Asia/Seoul",
-        "description": metadata.get("description", ""),
-        "enableLogging": True,
-        "enableStackdriverLogging": True
+        "agent": {
+            "displayName": metadata["name"],
+            "defaultLanguageCode": "ko",
+            "timeZone": "Asia/Seoul",
+            "description": metadata.get("description", ""),
+            "enableLogging": True,
+        },
+        "generativeSettings": {
+            "model": spec["foundationModel"]["modelId"],
+            "systemInstruction": system_prompt,
+        },
+        "tools": spec.get("tools", []),
+        # Knowledge Base 설정도 그대로 포함 (Vertex AI Search / Agent KB 연동 시 활용)
+        "knowledgeBase": spec.get("knowledgeBase", {}),
     }
     
     # 출력 디렉토리 생성

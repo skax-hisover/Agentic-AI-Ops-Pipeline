@@ -1,0 +1,6 @@
+# 프롬프트 버전 메타데이터
+version: v1.0.0
+file: prompts/system-prompt.md
+createdAt: "2024-01-01T00:00:00Z"
+commit: "initial-commit"
+description: "초기 프롬프트 버전"

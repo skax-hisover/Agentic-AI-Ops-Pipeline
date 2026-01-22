@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 """
 프롬프트 렌더링 테스트 스크립트
+
+- agent-definition.yaml 의 prompts.userPromptTemplate 경로를 찾아
+- {{user_input}}, {{context}}, {{conversation_history}} 등의 변수가
+  실제 값으로 잘 치환되는지 확인한다.
+
+치환되지 않은 변수({{...}})가 남아 있으면 CI 단계에서 실패하도록 하여
+런타임 프롬프트 오류를 사전에 방지한다.
 """
 import os
 import re

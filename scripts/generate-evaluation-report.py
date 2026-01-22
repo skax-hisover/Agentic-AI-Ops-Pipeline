@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """
 평가 리포트 생성 스크립트
+
+- evaluation-results/results.json 을 읽어
+- 전체 메트릭의 평균/최솟값/최댓값과
+- 테스트 케이스별 상세 메트릭을 포함한 report.md 를 생성한다.
+
+CI 결과를 사람이 빠르게 리뷰할 수 있도록 요약해 주는 역할.
 """
 import json
 import os

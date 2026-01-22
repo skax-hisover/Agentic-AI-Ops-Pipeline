@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """
 Agent 빌드 스크립트
+
+- agents/*/agent-definition.yaml 을 읽어서
+- CSP(provider: aws / azure / gcp) 별로 필요한 설정(JSON)을 생성하고
+- build/<agent-name>/ 디렉터리에 저장한다.
+
+CI/CD의 Build Stage에서 호출되는 핵심 스크립트.
 """
 import yaml
 import json
@@ -12,7 +18,7 @@ from typing import Dict, Any
 
 
 def load_prompt(prompt_path: str, agent_dir: str) -> str:
-    """프롬프트 파일 로드"""
+    """프롬프트 파일 로드 (agent 디렉터리 기준 상대 경로를 절대 경로로 바꿔 읽는다)"""
     full_path = os.path.join(agent_dir, prompt_path)
     if not os.path.exists(full_path):
         raise FileNotFoundError(f"Prompt file not found: {full_path}")
@@ -22,7 +28,13 @@ def load_prompt(prompt_path: str, agent_dir: str) -> str:
 
 
 def build_action_groups(tools: list) -> list:
-    """도구 정의를 Action Groups로 변환"""
+    """
+    도구 정의를 AWS Bedrock Agent에서 사용하는 actionGroups 구조로 변환
+
+    tools:
+      - name, type(function/api), endpoint 등의 정보를 기반으로
+        actionGroupName / actionGroupExecutor / apiSchema 를 만든다.
+    """
     action_groups = []
     
     for tool in tools:
@@ -42,7 +54,12 @@ def build_action_groups(tools: list) -> list:
 
 
 def build_knowledge_bases(kb_config: Dict[str, Any]) -> list:
-    """Knowledge Base 설정을 Bedrock 형식으로 변환"""
+    """
+    Knowledge Base 설정을 Bedrock 형식으로 변환
+
+    - enabled 가 False 이면 빈 리스트 반환
+    - dataSources 배열을 순회하여 S3 설정 등을 Bedrock KB 포맷으로 맞춘다.
+    """
     if not kb_config.get("enabled", False):
         return []
     
@@ -68,7 +85,12 @@ def build_knowledge_bases(kb_config: Dict[str, Any]) -> list:
 
 
 def build_aws_agent(agent_def: Dict[str, Any], agent_dir: str, output_dir: str):
-    """AWS Bedrock Agent 형식으로 빌드"""
+    """
+    AWS Bedrock Agent 형식으로 빌드
+
+    - systemPrompt, tools, knowledgeBase 정보를 조합해
+      bedrock-agent-config.json 을 생성한다.
+    """
     metadata = agent_def["metadata"]
     spec = agent_def["spec"]
     
@@ -110,7 +132,8 @@ def build_azure_agent(agent_def: Dict[str, Any], agent_dir: str, output_dir: str
     if "prompts" in spec and "systemPrompt" in spec["prompts"]:
         system_prompt = load_prompt(spec["prompts"]["systemPrompt"], agent_dir)
     
-    # Azure Assistants API에서 기대하는 형태에 최대한 맞춘 구조 (단, 실제 생성은 별도 deploy 단계에서 수행)
+    # Azure Assistants API에서 기대하는 형태에 최대한 맞춘 구조
+    # (여기서는 설정 JSON만 만들고, 실제 Assistant 생성은 배포 단계에서 수행하는 것을 가정)
     tools_config = []
     for tool in spec.get("tools", []):
         if tool["type"] == "function":
@@ -124,7 +147,7 @@ def build_azure_agent(agent_def: Dict[str, Any], agent_dir: str, output_dir: str
                 }
             )
         else:
-            # API 타입 도구는 단순 메타 정보만 남긴다
+            # API 타입 도구는 단순 메타 정보만 남긴다 (필요 시 나중에 확장)
             tools_config.append(
                 {
                     "type": "api",

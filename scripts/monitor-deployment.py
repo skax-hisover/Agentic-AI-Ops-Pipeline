@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """
 배포 모니터링 스크립트
+
+- 배포 이후 일정 시간 동안 주기적으로 메트릭을 조회하여
+- 에러율/지연시간/성공률 등이 임계값 이내인지 확인한다.
+
+CI/CD Deploy Stage의 마지막에 호출되어, 배포가 건강한 상태인지 자동으로 판단하는 역할.
 """
 import argparse
 import sys
@@ -9,7 +14,12 @@ from datetime import datetime, timedelta
 
 
 def check_deployment_metrics(environment: str) -> Dict[str, Any]:
-    """배포 메트릭 확인"""
+    """
+    배포 메트릭 확인
+
+    - 실제 구현에서는 CloudWatch / Datadog / Prometheus 등에서
+      필요한 메트릭을 조회하도록 교체해야 한다.
+    """
     # 실제 구현은 모니터링 시스템에서 메트릭 조회
     # 예시:
     # import boto3
@@ -28,8 +38,13 @@ def check_deployment_metrics(environment: str) -> Dict[str, Any]:
 
 
 def is_deployment_healthy(metrics: Dict[str, Any]) -> bool:
-    """배포 상태 확인"""
-    # 임계값 설정
+    """
+    배포 상태 확인
+
+    - error_rate / latency_p99 / success_rate 등을 기준으로
+      배포가 정상인지 여부를 boolean 으로 판별한다.
+    """
+    # 임계값 설정 (필요 시 환경별로 다르게 가져오도록 확장 가능)
     thresholds = {
         "error_rate": 0.05,  # 5% 이하
         "latency_p99": 2.0,  # 2초 이하

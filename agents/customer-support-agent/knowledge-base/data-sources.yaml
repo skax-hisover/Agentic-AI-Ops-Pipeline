@@ -1,28 +1,47 @@
 # data-sources.yaml
-dataSources:
-  - id: s3-documents
-    type: s3
-    bucket: agent-knowledge-base
-    path: documents/
-    fileTypes:
-      - pdf
-      - txt
-      - md
-    syncSchedule: "0 */6 * * *"  # 6시간마다 동기화
-    enabled: true
+# ============================================================================
+# Knowledge Base 데이터 소스 설정
+# ============================================================================
+# 이 파일은 Knowledge Base에 포함될 문서의 출처를 정의합니다.
+# 각 데이터 소스는 주기적으로 동기화되어 벡터 스토어에 인덱싱됩니다.
+# ============================================================================
 
+dataSources:
+  # --------------------------------------------------------------------------
+  # S3 데이터 소스: S3 버킷에서 문서 파일 수집
+  # --------------------------------------------------------------------------
+  - id: s3-documents  # 데이터 소스 고유 ID
+    type: s3          # 소스 타입: s3, database, api
+    bucket: agent-knowledge-base  # S3 버킷 이름
+    path: documents/  # 문서가 저장된 경로 (prefix)
+    
+    # 처리할 파일 타입 (이 타입만 수집)
+    fileTypes:
+      - pdf  # PDF 문서
+      - txt  # 텍스트 파일
+      - md   # 마크다운 파일
+    
+    syncSchedule: "0 */6 * * *"  # 동기화 스케줄 (Cron 형식: 6시간마다)
+    enabled: true  # 이 데이터 소스 활성화 여부
+
+  # --------------------------------------------------------------------------
+  # 데이터베이스 데이터 소스: DB에서 FAQ 등 구조화된 데이터 수집
+  # --------------------------------------------------------------------------
   - id: database-faq
     type: database
-    connectionString: ${DB_CONNECTION_STRING}
-    query: "SELECT id, question, answer FROM faq WHERE active = true"
-    syncSchedule: "0 */1 * * *"  # 1시간마다 동기화
+    connectionString: ${DB_CONNECTION_STRING}  # DB 연결 문자열 (환경 변수)
+    query: "SELECT id, question, answer FROM faq WHERE active = true"  # 수집할 데이터 쿼리
+    syncSchedule: "0 */1 * * *"  # 1시간마다 동기화 (FAQ는 자주 업데이트될 수 있음)
     enabled: true
 
+  # --------------------------------------------------------------------------
+  # API 데이터 소스: 외부 API에서 문서 수집 (예: API 문서)
+  # --------------------------------------------------------------------------
   - id: api-docs
     type: api
-    endpoint: https://api.example.com/docs
+    endpoint: https://api.example.com/docs  # API 엔드포인트
     authentication:
-      type: oauth2
-      tokenUrl: ${OAUTH_TOKEN_URL}
-    syncSchedule: "0 0 * * *"  # 매일 자정에 동기화
-    enabled: false
+      type: oauth2  # 인증 방식: oauth2, api_key, basic
+      tokenUrl: ${OAUTH_TOKEN_URL}  # OAuth 토큰 발급 URL (환경 변수)
+    syncSchedule: "0 0 * * *"  # 매일 자정에 동기화 (API 문서는 자주 변경되지 않음)
+    enabled: false  # 현재 비활성화 (필요 시 true로 변경)

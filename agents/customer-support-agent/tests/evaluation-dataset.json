@@ -1,42 +1,62 @@
 {
+  "_comment": "============================================================================",
+  "_comment2": "평가 데이터셋 파일",
+  "_comment3": "============================================================================",
+  "_comment4": "이 파일은 Agent의 성능을 평가하기 위한 테스트 케이스와 기준을 정의합니다.",
+  "_comment5": "run-evaluation.py 스크립트가 이 데이터셋을 사용하여 Agent를 평가합니다.",
+  "_comment6": "============================================================================",
+  
   "dataset": {
-    "name": "Customer Support Agent Evaluation Dataset",
-    "version": "1.0.0",
-    "createdAt": "2024-01-01T00:00:00Z"
+    "name": "Customer Support Agent Evaluation Dataset",  
+    "version": "1.0.0",  
+    "createdAt": "2024-01-01T00:00:00Z"  
   },
+  
   "testCases": [
     {
-      "id": "tc-001",
-      "input": "고객이 제품 반품을 요청했습니다",
+      "_comment": "----------------------------------------------------------------------------",
+      "_comment2": "테스트 케이스 1: 제품 반품 요청",
+      "_comment3": "----------------------------------------------------------------------------",
+      "id": "tc-001",  
+      "input": "고객이 제품 반품을 요청했습니다",  
+      
       "expectedOutput": {
-        "intent": "return_request",
-        "requiredTools": ["search-knowledge-base"],
-        "expectedResponse": "반품 절차에 대한 안내",
-        "minRelevanceScore": 0.7
+        "intent": "return_request",  
+        "requiredTools": ["search-knowledge-base"],  
+        "expectedResponse": "반품 절차에 대한 안내",  
+        "minRelevanceScore": 0.7  
       },
+      
       "context": {
-        "userRole": "customer",
-        "sessionHistory": []
+        "userRole": "customer",  
+        "sessionHistory": []  
       },
+      
       "evaluationCriteria": {
-        "accuracy": 0.8,
-        "relevance": 0.8,
-        "completeness": 0.7
+        "accuracy": 0.8,  
+        "relevance": 0.8,  
+        "completeness": 0.7  
       }
     },
     {
+      "_comment": "----------------------------------------------------------------------------",
+      "_comment2": "테스트 케이스 2: 배송 지연 문의",
+      "_comment3": "----------------------------------------------------------------------------",
       "id": "tc-002",
       "input": "배송이 지연되고 있어요",
+      
       "expectedOutput": {
-        "intent": "delivery_inquiry",
-        "requiredTools": ["search-knowledge-base", "create-ticket"],
+        "intent": "delivery_inquiry",  
+        "requiredTools": ["search-knowledge-base", "create-ticket"],  
         "expectedResponse": "배송 지연에 대한 안내 및 티켓 생성",
         "minRelevanceScore": 0.7
       },
+      
       "context": {
         "userRole": "customer",
         "sessionHistory": []
       },
+      
       "evaluationCriteria": {
         "accuracy": 0.8,
         "relevance": 0.8,
@@ -44,18 +64,24 @@
       }
     },
     {
+      "_comment": "----------------------------------------------------------------------------",
+      "_comment2": "테스트 케이스 3: 제품 사용법 문의",
+      "_comment3": "----------------------------------------------------------------------------",
       "id": "tc-003",
       "input": "제품 사용법을 알려주세요",
+      
       "expectedOutput": {
-        "intent": "product_inquiry",
-        "requiredTools": ["search-knowledge-base"],
+        "intent": "product_inquiry",  
+        "requiredTools": ["search-knowledge-base"],  
         "expectedResponse": "제품 사용법 안내",
         "minRelevanceScore": 0.7
       },
+      
       "context": {
         "userRole": "customer",
         "sessionHistory": []
       },
+      
       "evaluationCriteria": {
         "accuracy": 0.8,
         "relevance": 0.8,
@@ -63,18 +89,26 @@
       }
     }
   ],
+  
+  "_comment7": "============================================================================",
+  "_comment8": "평가 메트릭: 평가 시 계산할 메트릭 목록",
+  "_comment9": "============================================================================",
   "evaluationMetrics": [
-    "accuracy",
-    "relevance",
-    "completeness",
-    "responseTime",
-    "toolUsageCorrectness"
+    "accuracy",  
+    "relevance",  
+    "completeness",  
+    "responseTime",  
+    "toolUsageCorrectness"  
   ],
+  
+  "_comment10": "============================================================================",
+  "_comment11": "임계값: 평가 통과를 위한 최소 기준",
+  "_comment12": "============================================================================",
   "thresholds": {
-    "accuracy": 0.75,
-    "relevance": 0.75,
-    "completeness": 0.70,
-    "responseTime": 5.0,
-    "overall": 0.75
+    "accuracy": 0.75,  
+    "relevance": 0.75,  
+    "completeness": 0.70,  
+    "responseTime": 5.0,  
+    "overall": 0.75  
   }
 }

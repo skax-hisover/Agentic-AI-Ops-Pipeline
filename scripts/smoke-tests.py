@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """
 Smoke Tests 스크립트
+
+- 배포 직후 해당 환경(Dev/Staging/Prod)에서
+  - Agent 헬스 체크
+  - 간단한 호출 여부
+  - Knowledge Base 접근 가능 여부
+  세 가지를 빠르게 확인하는 데 사용된다.
 """
 import argparse
 import sys

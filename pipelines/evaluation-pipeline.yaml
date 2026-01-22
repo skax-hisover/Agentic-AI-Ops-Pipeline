@@ -1,9 +1,12 @@
 # evaluation-pipeline.yaml
+# - 정기/수동 평가 파이프라인 템플릿
+# - 실제 구현은 .github/workflows/evaluation-pipeline.yml 을 참고
+
 name: Agent Evaluation
 
 on:
   schedule:
-    # 매일 자정에 실행
+    # 매일 자정에 실행 (UTC 기준) → KST 오전 9시
     - cron: '0 0 * * *'
   workflow_dispatch:
     inputs:
@@ -17,6 +20,7 @@ env:
 
 jobs:
   evaluate:
+    # 평가 실행 → 리포트 생성 → 베이스라인 비교까지 한 번에 처리
     name: Run Agent Evaluation
     runs-on: ubuntu-latest
     steps:
@@ -32,14 +36,14 @@ jobs:
         run: |
           pip install -r requirements.txt
 
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials   # 평가 시 Agent 호출용 자격 증명 설정
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Run Evaluation
+      - name: Run Evaluation              # Agent별 evaluation-dataset.json으로 평가 수행
         run: |
           if [ -n "${{ inputs.agent_name }}" ]; then
             agent_dir="agents/${{ inputs.agent_name }}"
@@ -62,15 +66,15 @@ jobs:
             done
           fi
       
-      - name: Generate Evaluation Report
+      - name: Generate Evaluation Report  # 결과 요약 리포트 생성
         run: |
           python scripts/generate-evaluation-report.py
       
-      - name: Compare with Baseline
+      - name: Compare with Baseline       # 이전 평가 결과와 비교
         run: |
           python scripts/compare-evaluation-results.py
       
-      - name: Upload Evaluation Results
+      - name: Upload Evaluation Results   # 날짜별 평가 결과 업로드
         uses: actions/upload-artifact@v3
         with:
           name: evaluation-results-$(date +%Y%m%d)

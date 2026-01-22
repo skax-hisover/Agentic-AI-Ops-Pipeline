@@ -1,13 +1,14 @@
-name: Agent Evaluation
+name: Agent Evaluation  # 정기/수동 Agent 품질 평가 파이프라인
 
 on:
+  # cron 스케줄에 따라 매일 자정 자동 실행 + 필요 시 수동 실행
   schedule:
-    # 매일 자정에 실행
+    # 매일 자정(UTC 기준) 실행 → KST 기준 오전 9시
     - cron: '0 0 * * *'
   workflow_dispatch:
     inputs:
       agent_name:
-        description: 'Agent name to evaluate'
+        description: 'Agent name to evaluate (특정 Agent만 평가하고 싶을 때)'
         required: false
         type: string
 
@@ -16,6 +17,7 @@ env:
 
 jobs:
   evaluate:
+    # 하나의 Job에서 전체 평가 사이클(실행 → 리포트 → 비교) 수행
     name: Run Agent Evaluation
     runs-on: ubuntu-latest
     steps:
@@ -31,6 +33,7 @@ jobs:
         run: |
           pip install -r requirements.txt
 
+      # 평가 시에도 실제 Agent 호출을 위해 AWS 자격증명 설정
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -38,9 +41,11 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
+      # 1) 특정 Agent만 평가하거나 2) 모든 Agent를 순회하며 평가 실행
       - name: Run Evaluation
         run: |
           if [ -n "${{ inputs.agent_name }}" ]; then
+            # 입력으로 Agent 이름이 주어진 경우: 해당 Agent만 평가
             agent_dir="agents/${{ inputs.agent_name }}"
             dataset_file="$agent_dir/tests/evaluation-dataset.json"
             if [ -f "$dataset_file" ]; then
@@ -49,6 +54,7 @@ jobs:
                 --agent "$agent_dir"
             fi
           else
+            # 입력이 없으면 agents/* 아래의 모든 Agent에 대해 평가 실행
             for agent_dir in agents/*/; do
               agent_name=$(basename "$agent_dir")
               dataset_file="$agent_dir/tests/evaluation-dataset.json"
@@ -61,14 +67,17 @@ jobs:
             done
           fi
       
+      # 평가 결과(JSON)를 집계하여 요약 마크다운 리포트 생성
       - name: Generate Evaluation Report
         run: |
           python scripts/generate-evaluation-report.py
       
+      # 이번 결과와 baseline 결과를 비교하여 성능 향상/저하 여부 확인
       - name: Compare with Baseline
         run: |
           python scripts/compare-evaluation-results.py
       
+      # 날짜별로 평가 결과 디렉터리를 아티팩트로 업로드 (장기 추세 분석/복기용)
       - name: Upload Evaluation Results
         uses: actions/upload-artifact@v4
         with:

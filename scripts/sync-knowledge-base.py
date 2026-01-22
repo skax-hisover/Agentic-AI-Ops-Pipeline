@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 """
 Knowledge Base 동기화 스크립트
+
+- Agent 정의(spec.knowledgeBase)를 읽어서
+- 정의된 데이터 소스(S3, DB 등)에서 문서를 수집하고
+- 임베딩을 생성한 뒤
+- 벡터 스토어(OpenSearch / Azure Search / Vertex Search 등)에 인덱스를 반영한다.
+
+CI/CD Deploy Stage에서 각 환경(Dev/Staging/Prod)의 KB를 최신 상태로 유지하는 역할.
 """
 import yaml
 import os
@@ -131,7 +138,14 @@ def update_vertex_search_index(embeddings: List[Dict[str, Any]], environment: st
 
 
 def sync_knowledge_base(agent_def_file: str, environment: str):
-    """Knowledge Base 동기화 메인 함수"""
+    """
+    Knowledge Base 동기화 메인 함수
+
+    1) agent-definition.yaml 에서 knowledgeBase 설정 로드
+    2) dataSources 별로 문서 수집
+    3) 임베딩 생성
+    4) vectorStore 타입(opensearch/azure_search/vertex_search)에 맞게 인덱스 업데이트
+    """
     with open(agent_def_file, 'r', encoding='utf-8') as f:
         agent_def = yaml.safe_load(f)
     

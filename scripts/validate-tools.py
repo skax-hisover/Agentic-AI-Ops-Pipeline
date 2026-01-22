@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """
 도구 정의 검증 스크립트
+
+- agents/*/tools/tool-definitions.yaml 내 각 tool 이
+  - name / description 등의 필수 필드를 가지고 있는지
+  - parameters 항목에 name/type 이 빠지지 않았는지
+  등을 정적으로 검사한다.
 """
 import yaml
 import os

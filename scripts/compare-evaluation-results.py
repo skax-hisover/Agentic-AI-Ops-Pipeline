@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """
 평가 결과 비교 스크립트
+
+- 최근 평가 결과(results.json)를 이전 베이스라인(baseline.json)과 비교하여
+  메트릭별로 얼마나 개선/악화/유지되었는지를 출력한다.
+
+첫 실행 시에는 현재 결과를 baseline.json 으로 저장하고,
+그 이후부터는 기준점 대비 상대적인 변화를 보는 용도로 사용한다.
 """
 import json
 import os

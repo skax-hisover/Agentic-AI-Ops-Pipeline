@@ -1,0 +1,10 @@
+# 프롬프트 버전 메타데이터
+version: v1.2.0
+file: prompts/system-prompt.md
+createdAt: "2024-01-15T00:00:00Z"
+commit: "update-prompt-v1.2.0"
+description: "응답 가이드라인 및 대화 이력 지원 추가"
+changes:
+  - "응답 가이드라인 섹션 추가"
+  - "대화 이력 변수 추가"
+  - "명확한 의사소통 원칙 강화"

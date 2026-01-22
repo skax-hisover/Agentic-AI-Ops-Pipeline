@@ -1,18 +1,34 @@
 # embedding-config.yaml
+# ============================================================================
+# 임베딩 및 벡터 스토어 설정
+# ============================================================================
+# 이 파일은 Knowledge Base의 문서를 벡터로 변환하고 저장하는 설정을 정의합니다.
+# ============================================================================
+
+# --------------------------------------------------------------------------
+# Embedding: 문서를 벡터로 변환하는 설정
+# --------------------------------------------------------------------------
 embedding:
-  model: text-embedding-ada-002
-  provider: aws  # aws, azure, gcp
-  dimensions: 1536
-  chunkSize: 1000
-  chunkOverlap: 200
+  model: text-embedding-ada-002  # 임베딩 모델 이름 (OpenAI 호환)
+  provider: aws  # 임베딩 모델 제공자: aws (Bedrock), azure, gcp
+  dimensions: 1536  # 벡터 차원 수 (모델에 따라 고정)
+  
+  chunkSize: 1000  # 문서 청크 크기 (토큰 수, 긴 문서를 나눌 단위)
+  chunkOverlap: 200  # 청크 간 겹치는 토큰 수 (문맥 유지를 위해)
 
+# --------------------------------------------------------------------------
+# Vector Store: 벡터를 저장하고 검색할 스토어 설정
+# --------------------------------------------------------------------------
 vectorStore:
-  type: opensearch
-  endpoint: ${OPENSEARCH_ENDPOINT}
-  indexName: customer-support-kb
-  region: us-east-1
+  type: opensearch  # 벡터 스토어 타입: opensearch, azure_search, vertex_search
+  endpoint: ${OPENSEARCH_ENDPOINT}  # OpenSearch 엔드포인트 (환경 변수)
+  indexName: customer-support-kb  # 인덱스 이름 (벡터가 저장될 인덱스)
+  region: us-east-1  # AWS 리전 (OpenSearch 클러스터 위치)
 
+# --------------------------------------------------------------------------
+# Indexing: 인덱싱 작업 설정 (문서를 벡터로 변환하여 저장하는 과정)
+# --------------------------------------------------------------------------
 indexing:
-  batchSize: 100
-  maxConcurrency: 5
-  retryAttempts: 3
+  batchSize: 100  # 한 번에 처리할 문서 수 (배치 크기)
+  maxConcurrency: 5  # 동시에 실행할 인덱싱 작업 수 (병렬 처리)
+  retryAttempts: 3  # 실패 시 재시도 횟수

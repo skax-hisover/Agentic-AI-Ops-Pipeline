@@ -1,0 +1,18 @@
+# 도구 구현 코드 의존성
+
+# AWS SDK (Lambda 함수용)
+boto3>=1.28.0
+
+# HTTP 클라이언트 (API 호출용)
+requests>=2.31.0
+
+# OpenSearch 클라이언트 (Knowledge Base 검색용)
+opensearch-py>=2.3.0
+
+# Azure SDK (Azure Functions용, 선택사항)
+# azure-functions>=1.18.0
+# azure-identity>=1.14.0
+
+# GCP SDK (Cloud Functions용, 선택사항)
+# google-cloud-functions>=1.13.0
+# google-cloud-aiplatform>=1.38.0

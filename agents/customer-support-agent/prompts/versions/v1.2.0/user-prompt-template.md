@@ -1,9 +1,9 @@
-# User Prompt Template
+# User Prompt Template (v1.2.0)
 
-## 실제 사용자가 입력한 질문/요청 입력 값
+## 사용자 입력
 {{user_input}}
 
-## 컨텍스트 (사용자 ID, 세션 ID 등 메타데이터)
+## 컨텍스트
 {{context}}
 
 ## 대화 이력

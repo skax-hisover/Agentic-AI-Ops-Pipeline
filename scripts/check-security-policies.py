@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """
 보안 정책 검증 스크립트
+
+- agent-definition.yaml 의 spec.security 섹션이 최소 요구 사항을 충족하는지 확인하고
+- Agent 디렉터리 내 YAML/Python/JS/TS/Markdown 파일 전체를 스캔하여
+  password/api key/secret 등 하드코딩된 자격 증명 패턴을 탐지한다.
+
+보안 관점에서 Agent 정의와 구현이 기본 가이드를 따르고 있는지 점검하는 역할.
 """
 import yaml
 import os

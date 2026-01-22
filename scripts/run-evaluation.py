@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """
 Agent 평가 실행 스크립트
+
+- tests/evaluation-dataset.json 과 같은 평가 데이터셋을 읽고
+- Agent를 호출(invoke_agent)하여 응답을 수집한 뒤
+- accuracy / relevance / completeness / toolUsageCorrectness 등의 메트릭을 계산한다.
+
+CI/CD Test/Evaluation Stage 및 정기 평가 파이프라인에서 공통으로 사용하는 핵심 로직.
 """
 import json
 import yaml
@@ -13,7 +19,13 @@ from datetime import datetime
 
 
 def invoke_agent(agent_def: Dict[str, Any], input_text: str, context: Dict[str, Any]) -> Dict[str, Any]:
-    """Agent 호출 (실제 구현은 CSP별 SDK 사용)"""
+    """
+    Agent 호출 (실제 구현은 CSP별 SDK 사용)
+
+    - 현재는 더미 응답을 반환하지만,
+    - provider(aws/azure/gcp)에 따라 Bedrock Runtime / Azure OpenAI / Vertex AI 등을 호출하도록
+      구현을 교체하면 된다.
+    """
     # 실제 구현은 CSP별 Agent API 호출
     # 예시:
     # if provider == "aws":
@@ -34,8 +46,12 @@ def invoke_agent(agent_def: Dict[str, Any], input_text: str, context: Dict[str, 
 
 
 def calculate_accuracy(response: str, expected: Dict[str, Any]) -> float:
-    """정확도 계산"""
-    # 간단한 키워드 기반 정확도 계산
+    """
+    정확도 계산 (간단한 키워드 기반)
+
+    - expected.expectedResponse 에 포함된 단어들이
+      실제 응답에 얼마나 많이 등장하는지를 비율로 계산한다.
+    """
     expected_text = expected.get("expectedResponse", "").lower()
     response_lower = response.lower()
     
@@ -53,8 +69,12 @@ def calculate_accuracy(response: str, expected: Dict[str, Any]) -> float:
 
 
 def calculate_relevance(response: str, expected: Dict[str, Any]) -> float:
-    """관련성 계산"""
-    # 간단한 관련성 계산 (실제로는 더 정교한 방법 사용)
+    """
+    관련성 계산 (intent 기반 간단 버전)
+
+    - intent 값(return_request 등)에 따라 정의된 키워드 집합을
+      응답 문자열에서 얼마나 발견하는지로 관련성을 추정한다.
+    """
     intent = expected.get("intent", "")
     response_lower = response.lower()
     
@@ -76,8 +96,11 @@ def calculate_relevance(response: str, expected: Dict[str, Any]) -> float:
 
 
 def calculate_completeness(response: str, expected: Dict[str, Any]) -> float:
-    """완전성 계산"""
-    # 응답 길이와 예상 도구 사용 여부 확인
+    """
+    완전성 계산
+
+    - 응답 길이가 충분히 긴지 여부 + 필수 도구 사용 여부를 기반으로 점수를 계산한다.
+    """
     completeness = 0.0
     
     # 응답 길이 점수 (최소 50자 이상)
@@ -96,7 +119,12 @@ def calculate_completeness(response: str, expected: Dict[str, Any]) -> float:
 
 
 def evaluate_response(response: Dict[str, Any], expected: Dict[str, Any], metrics: List[str]) -> Dict[str, float]:
-    """응답 평가"""
+    """
+    응답 평가
+
+    - metrics 리스트(accuracy, relevance, ...)에 명시된 항목에 대해서만
+      개별 메트릭 함수를 호출해 결과를 딕셔너리로 돌려준다.
+    """
     response_text = response.get("response", "")
     
     evaluation_results = {}
@@ -155,7 +183,12 @@ def meets_thresholds(results: List[Dict[str, Any]], thresholds: Dict[str, float]
 
 
 def run_evaluation(dataset_file: str, agent_dir: str) -> List[Dict[str, Any]]:
-    """평가 실행"""
+    """
+    평가 실행
+
+    - 데이터셋의 testCases 를 순회하면서
+      Agent를 호출하고 각 케이스별 메트릭을 계산하여 결과 리스트를 반환한다.
+    """
     # 데이터셋 로드
     with open(dataset_file, 'r', encoding='utf-8') as f:
         dataset = json.load(f)
@@ -204,7 +237,11 @@ def run_evaluation(dataset_file: str, agent_dir: str) -> List[Dict[str, Any]]:
 
 
 def generate_report(results: List[Dict[str, Any]], output_dir: str = "evaluation-results"):
-    """평가 리포트 생성"""
+    """
+    평가 리포트 생성
+
+    - results.json (머신 친화적)과 report.md (사람이 읽기 좋은 요약)를 함께 생성한다.
+    """
     os.makedirs(output_dir, exist_ok=True)
     
     # JSON 결과 저장

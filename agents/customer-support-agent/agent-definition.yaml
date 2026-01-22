@@ -1,59 +1,116 @@
 # agent-definition.yaml
-apiVersion: agent.ai/v1
-kind: Agent
+# ============================================================================
+# Agent 정의 파일
+# ============================================================================
+# 이 파일은 AI Agent의 전체 구성을 정의합니다.
+# - 메타데이터: Agent 이름, 버전, 설명
+# - Foundation Model: 사용할 LLM 모델 설정
+# - Prompts: 시스템 프롬프트 및 사용자 프롬프트 템플릿
+# - Tools: Agent가 사용할 수 있는 도구들
+# - Knowledge Base: RAG를 위한 벡터 스토어 설정
+# - Security: 보안 정책 및 Guardrails
+# - Observability: 로깅, 메트릭, 추적 설정
+# ============================================================================
+
+# API 버전 및 종류 정의
+apiVersion: agent.ai/v1  # Agent 정의 스키마 버전
+kind: Agent               # 리소스 종류 (Agent)
+
+# ============================================================================
+# Metadata: Agent의 기본 정보
+# ============================================================================
 metadata:
-  name: customer-support-agent
-  version: 1.0.0
-  description: 고객 지원을 위한 AI Agent
+  name: customer-support-agent  # Agent 고유 이름 (배포 시 식별자로 사용)
+  version: 1.0.0                # Agent 버전 (Semantic Versioning)
+  description: 고객 지원을 위한 AI Agent  # Agent 용도 설명
+
+# ============================================================================
+# Spec: Agent의 상세 설정
+# ============================================================================
 spec:
+  # --------------------------------------------------------------------------
+  # Foundation Model: 사용할 LLM 모델 설정
+  # --------------------------------------------------------------------------
   foundationModel:
-    provider: aws  # aws, azure, gcp
-    modelId: anthropic.claude-3-sonnet
-    temperature: 0.7
-    maxTokens: 2048
+    provider: aws  # 클라우드 제공자: aws, azure, gcp 중 선택
+    modelId: anthropic.claude-3-sonnet  # 모델 ID (AWS Bedrock 기준)
+    temperature: 0.7  # 생성 온도 (0.0~1.0, 높을수록 창의적)
+    maxTokens: 2048  # 최대 토큰 수 (응답 길이 제한)
   
+  # --------------------------------------------------------------------------
+  # Prompts: 프롬프트 파일 경로 및 버전
+  # --------------------------------------------------------------------------
   prompts:
-    systemPrompt: prompts/system-prompt.md
-    userPromptTemplate: prompts/user-prompt-template.md
-    version: v1.2.0
+    systemPrompt: prompts/system-prompt.md  # 시스템 프롬프트 파일 (Agent의 정체성 정의)
+    userPromptTemplate: prompts/user-prompt-template.md  # 사용자 프롬프트 템플릿 (동적 변수 포함)
+    version: v1.2.0  # 프롬프트 버전 (versions/ 디렉토리에서 관리)
   
+  # --------------------------------------------------------------------------
+  # Tools: Agent가 호출할 수 있는 도구 목록
+  # --------------------------------------------------------------------------
   tools:
-    - name: search-knowledge-base
-      type: function
-      definition: tools/tool-definitions.yaml#search-kb
+    # Knowledge Base 검색 도구 (함수 타입)
+    - name: search-knowledge-base  # 도구 이름 (Agent가 인식하는 이름)
+      type: function               # 도구 타입: function (Lambda) 또는 api (외부 API)
+      definition: tools/tool-definitions.yaml#search-kb  # 도구 정의 파일 경로 및 앵커
+    
+    # 티켓 생성 도구 (API 타입)
     - name: create-ticket
-      type: api
-      endpoint: https://api.example.com/tickets
-      authentication: oauth2
+      type: api                    # 외부 API 호출
+      endpoint: https://api.example.com/tickets  # API 엔드포인트
+      authentication: oauth2       # 인증 방식
   
+  # --------------------------------------------------------------------------
+  # Knowledge Base: RAG를 위한 벡터 스토어 설정
+  # --------------------------------------------------------------------------
   knowledgeBase:
-    enabled: true
+    enabled: true  # Knowledge Base 활성화 여부
+    
+    # 데이터 소스 목록 (문서 수집 소스)
     dataSources:
+      # S3 버킷에서 문서 수집
       - type: s3
-        bucket: agent-knowledge-base
-        path: documents/
+        bucket: agent-knowledge-base  # S3 버킷 이름
+        path: documents/              # 문서 경로 (prefix)
+      
+      # 데이터베이스에서 FAQ 등 수집
       - type: database
-        connectionString: ${DB_CONNECTION_STRING}
-    embeddingModel: text-embedding-ada-002
-    vectorStore: opensearch
+        connectionString: ${DB_CONNECTION_STRING}  # DB 연결 문자열 (환경 변수)
+    
+    embeddingModel: text-embedding-ada-002  # 임베딩 모델 (문서를 벡터로 변환)
+    vectorStore: opensearch  # 벡터 스토어 타입: opensearch, azure_search, vertex_search
   
+  # --------------------------------------------------------------------------
+  # Security: 보안 정책 및 Guardrails
+  # --------------------------------------------------------------------------
   security:
+    # Guardrails: 콘텐츠 필터링 및 보안 검사
     guardrails:
-      enabled: true
-      contentFilter: moderate
-      piiDetection: true
+      enabled: true              # Guardrails 활성화
+      contentFilter: moderate    # 콘텐츠 필터 레벨: strict, moderate, lenient
+      piiDetection: true         # 개인정보(PII) 탐지 활성화
+    
+    # 권한: Agent가 접근할 수 있는 리소스 및 액션
     permissions:
-      - resource: "s3://agent-data/*"
-        actions: ["read"]
+      - resource: "s3://agent-data/*"  # 접근 가능한 리소스 패턴
+        actions: ["read"]              # 허용된 액션: read, write, delete 등
   
+  # --------------------------------------------------------------------------
+  # Observability: 모니터링 및 추적 설정
+  # --------------------------------------------------------------------------
   observability:
+    # 로깅 설정
     logging:
-      level: INFO
-      destinations: [cloudwatch, datadog]
+      level: INFO  # 로그 레벨: DEBUG, INFO, WARN, ERROR
+      destinations: [cloudwatch, datadog]  # 로그 전송 대상
+    
+    # 수집할 메트릭 목록
     metrics:
-      - latency
-      - tokenUsage
-      - errorRate
+      - latency      # 응답 지연 시간
+      - tokenUsage   # 토큰 사용량
+      - errorRate    # 에러 발생률
+    
+    # 분산 추적 설정
     tracing:
-      enabled: true
-      provider: xray
+      enabled: true   # 추적 활성화
+      provider: xray  # 추적 제공자: xray (AWS), application_insights (Azure), cloud_trace (GCP)

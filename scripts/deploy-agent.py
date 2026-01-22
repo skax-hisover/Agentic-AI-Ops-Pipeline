@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """
 Agent 배포 스크립트
+
+- build 단계에서 생성한 설정/Agent 정의를 바탕으로
+- AWS / Azure / GCP 각 CSP에 Agent(또는 Assistant)를 생성/업데이트하는 책임을 가진다.
+
+현재는 실제 SDK 호출 로직 대신, 어디에 무엇을 배포할지 출력하는 형태로 골격만 구현되어 있다.
 """
 import yaml
 import json
@@ -18,7 +23,12 @@ def load_agent_definition(agent_def_file: str) -> Dict[str, Any]:
 
 
 def deploy_aws_agent(agent_def: Dict[str, Any], environment: str, enable_canary: bool = False):
-    """AWS Bedrock Agent 배포"""
+    """
+    AWS Bedrock Agent 배포
+
+    - 실제로는 boto3(Bedrock Agent/Agent Runtime)를 이용해
+      bedrock-agent-config.json 을 읽어 Agent를 생성/업데이트해야 한다.
+    """
     print(f"Deploying AWS Bedrock Agent to {environment}...")
     
     # 실제 배포 로직은 AWS SDK를 사용하여 구현
@@ -39,7 +49,12 @@ def deploy_aws_agent(agent_def: Dict[str, Any], environment: str, enable_canary:
 
 
 def deploy_azure_agent(agent_def: Dict[str, Any], environment: str):
-    """Azure OpenAI Assistant 배포"""
+    """
+    Azure OpenAI Assistant 배포
+
+    - scripts/build-agent.py 에서 생성한 azure-assistant-config.json 을 사용해
+      Azure OpenAI Assistants API로 리소스를 만드는 역할을 하도록 확장할 수 있다.
+    """
     print(f"Deploying Azure OpenAI Assistant to {environment}...")
     
     # 실제 배포 로직은 Azure SDK를 사용하여 구현
@@ -60,7 +75,12 @@ def deploy_azure_agent(agent_def: Dict[str, Any], environment: str):
 
 
 def deploy_gcp_agent(agent_def: Dict[str, Any], environment: str):
-    """GCP Vertex AI Agent 배포"""
+    """
+    GCP Vertex AI Agent 배포
+
+    - gcp-agent-config.json 을 읽어 Vertex AI Agent / Dialogflow 등으로
+      Agent 리소스를 만드는 역할을 수행하도록 확장 가능하다.
+    """
     print(f"Deploying GCP Vertex AI Agent to {environment}...")
     
     # 실제 배포 로직은 GCP SDK를 사용하여 구현
@@ -76,7 +96,12 @@ def deploy_gcp_agent(agent_def: Dict[str, Any], environment: str):
 
 
 def deploy_agent(agent_def_file: str, environment: str, enable_canary: bool = False):
-    """Agent 배포 메인 함수"""
+    """
+    Agent 배포 메인 함수
+
+    - Agent 정의 YAML을 읽어 provider(aws/azure/gcp)를 확인한 뒤
+      CSP별 deploy_* 함수를 호출한다.
+    """
     agent_def = load_agent_definition(agent_def_file)
     provider = agent_def["spec"]["foundationModel"]["provider"]
     
@@ -101,8 +126,12 @@ def deploy_agent(agent_def_file: str, environment: str, enable_canary: bool = Fa
 
 
 def get_environment_config(environment: str) -> Dict[str, Any]:
-    """환경별 설정 로드"""
-    # 실제로는 환경 변수나 설정 파일에서 로드
+    """
+    환경별 설정 로드
+
+    - 실제로는 환경 변수(.env, SSM, Secret Manager 등)나 별도 설정 파일에서
+      region, timeout, endpoint 등을 읽어오도록 확장할 수 있다.
+    """
     configs = {
         "dev": {
             "region": "us-east-1",

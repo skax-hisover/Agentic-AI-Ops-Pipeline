@@ -1,11 +1,12 @@
-name: Build Agent
+name: Build Agent  # AI Agent 빌드 파이프라인(정적 검증 + 아티팩트 생성)
 
 on:
+  # main / develop 브랜치에 푸시되거나 PR이 올라올 때 빌드 수행
   push:
     branches: [main, develop]
     paths:
-      - 'agents/**'
-      - 'scripts/**'
+      - 'agents/**'                     # Agent 정의/프롬프트/도구 변경 시
+      - 'scripts/**'                    # 빌드/검증 스크립트 변경 시
       - '.github/workflows/build-pipeline.yml'
   pull_request:
     branches: [main]
@@ -14,44 +15,53 @@ on:
       - 'scripts/**'
 
 env:
-  PYTHON_VERSION: '3.11'
+  PYTHON_VERSION: '3.11'  # 모든 Job에서 공통으로 사용할 Python 버전
 
 jobs:
   validate:
+    # 1단계: 코드 빌드 전에 Agent 정의/프롬프트/도구/보안 설정을 정적으로 검증
     name: Validate Agent Definitions
     runs-on: ubuntu-latest
     steps:
+      # GitHub 저장소 코드 체크아웃
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Python 실행 환경 세팅
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
+      # 빌드/검증 스크립트에서 사용하는 Python 패키지 설치
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
 
+      # Agent 스키마(구조/필수 필드)를 검증
       - name: Validate Agent Definition
         run: |
           python scripts/validate-agent-definition.py agents/*/agent-definition.yaml
       
+      # 프롬프트 파일 길이/변수/민감정보 등을 검증
       - name: Validate Prompts
         run: |
           python scripts/validate-prompts.py agents/*/prompts/
       
+      # 도구 정의 YAML 구조 및 필수 필드 검증
       - name: Validate Tool Definitions
         run: |
           python scripts/validate-tools.py agents/*/tools/tool-definitions.yaml
       
+      # Agent 정의와 코드에 하드코딩된 시크릿/보안 정책 위반이 없는지 검증
       - name: Check Security
         run: |
           python scripts/check-security-policies.py agents/*/
 
   build:
+    # 2단계: 검증이 통과한 후 실제 CSP별 Agent 설정 아티팩트 생성
     name: Build Agent Artifacts
-    needs: validate
+    needs: validate            # validate Job이 성공해야만 실행
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -66,6 +76,8 @@ jobs:
         run: |
           pip install -r requirements.txt
 
+      # 각 Agent 디렉터리(agents/*)에 대해 build-agent 스크립트를 실행
+      # → AWS/Azure/GCP용 설정 JSON 파일들을 build/<agent-name>/ 아래에 생성
       - name: Build Agent Artifacts
         run: |
           for agent_dir in agents/*/; do
@@ -74,14 +86,16 @@ jobs:
             python scripts/build-agent.py --agent-dir "$agent_dir"
           done
       
+      # build 디렉터리 전체를 하나의 tar.gz 아카이브로 묶어 배포/테스트 Job에서 재사용
       - name: Package Artifacts
         run: |
           mkdir -p build
           tar -czf agent-artifacts.tar.gz build/
       
+      # 이후 Test/Deploy 파이프라인에서 가져다 쓸 수 있도록 아티팩트 업로드
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: agent-artifacts
           path: agent-artifacts.tar.gz
-          retention-days: 7
+          retention-days: 7   # 7일 동안 보관

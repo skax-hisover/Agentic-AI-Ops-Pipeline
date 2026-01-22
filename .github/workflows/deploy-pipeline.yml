@@ -1,6 +1,7 @@
-name: Deploy Agent
+name: Deploy Agent  # Dev → Staging → Production 단계별 Agent 배포 파이프라인
 
 on:
+  # main 브랜치에 변경이 있을 때 자동 배포, 또는 수동 workflow_dispatch로 특정 환경만 배포
   push:
     branches: [main]
     paths:
@@ -23,9 +24,11 @@ env:
 
 jobs:
   deploy-dev:
+    # 1단계: 개발(Dev) 환경으로 배포
     name: Deploy to Development
-    environment: development
+    environment: development           # GitHub Environments와 연동 가능
     runs-on: ubuntu-latest
+    # develop 또는 main 브랜치에서만 Dev 배포 수행
     if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main'
     steps:
       - name: Checkout code
@@ -40,6 +43,7 @@ jobs:
         run: |
           pip install -r requirements.txt
 
+      # AWS 자격 증명 설정 (실제 Bedrock/Infra에 배포할 권한 부여)
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -47,12 +51,14 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
+      # Build 파이프라인에서 생성한 agent-artifacts.tar.gz 다운로드
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
           name: agent-artifacts
           path: build/
 
+      # Dev 환경에 모든 Agent 배포 (scripts/deploy-agent.py 사용)
       - name: Deploy to Dev
         run: |
           for agent_dir in agents/*/; do
@@ -63,18 +69,21 @@ jobs:
               --agent-definition "$agent_dir/agent-definition.yaml"
           done
       
+      # Dev용 Knowledge Base 인덱스 동기화 (문서 → 임베딩 → 벡터스토어 업데이트)
       - name: Sync Knowledge Base
         run: |
           python scripts/sync-knowledge-base.py \
             --environment dev \
             --agent-definition agents/customer-support-agent/agent-definition.yaml
       
+      # 기본 헬스 체크/간단 시나리오 테스트 (실패해도 배포 자체를 롤백하지는 않음)
       - name: Run Smoke Tests
         run: |
           python scripts/smoke-tests.py --environment dev
         continue-on-error: true
 
   deploy-staging:
+    # 2단계: Staging 환경 배포 (Dev 단계 성공 후)
     name: Deploy to Staging
     environment: staging
     runs-on: ubuntu-latest
@@ -106,6 +115,7 @@ jobs:
           name: agent-artifacts
           path: build/
 
+      # Staging 환경으로 배포 (운영과 최대한 비슷한 설정에서 검증)
       - name: Deploy to Staging
         run: |
           for agent_dir in agents/*/; do
@@ -116,17 +126,20 @@ jobs:
               --agent-definition "$agent_dir/agent-definition.yaml"
           done
       
+      # Staging 환경 Knowledge Base 인덱스 동기화
       - name: Sync Knowledge Base
         run: |
           python scripts/sync-knowledge-base.py \
             --environment staging \
             --agent-definition agents/customer-support-agent/agent-definition.yaml
       
+      # Staging에서 전체 테스트 스위트 재실행 (회귀 테스트 용도)
       - name: Run Full Test Suite
         run: |
           pytest tests/ -v || true
 
   deploy-production:
+    # 3단계: 운영(Production) 환경 배포 (Staging OK 이후)
     name: Deploy to Production
     environment: production
     runs-on: ubuntu-latest
@@ -158,6 +171,7 @@ jobs:
           name: agent-artifacts
           path: build/
 
+      # 운영 환경에 배포 (Canary 옵션 활성화: 점진적 트래픽 전환 등은 deploy-agent.py에서 구현)
       - name: Deploy to Production
         run: |
           for agent_dir in agents/*/; do
@@ -169,16 +183,19 @@ jobs:
               --enable-canary
           done
       
+      # 운영 환경 Knowledge Base 인덱스 동기화
       - name: Sync Knowledge Base
         run: |
           python scripts/sync-knowledge-base.py \
             --environment production \
             --agent-definition agents/customer-support-agent/agent-definition.yaml
       
+      # 배포 직후 일정 시간 동안 핵심 메트릭 모니터링 (에러율/지연시간 등)
       - name: Monitor Deployment
         run: |
           python scripts/monitor-deployment.py --timeout 300
       
+      # 운영 환경에서의 최종 스모크 테스트 (핵심 기능만 빠르게 점검)
       - name: Run Production Smoke Tests
         run: |
           python scripts/smoke-tests.py --environment production

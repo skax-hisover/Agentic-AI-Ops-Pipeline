@@ -1,42 +1,69 @@
 # unit-tests.yaml
+# ============================================================================
+# 단위 테스트 정의 파일
+# ============================================================================
+# 이 파일은 Agent의 개별 구성 요소(프롬프트, 도구, 정의 파일)를
+# 독립적으로 테스트하는 단위 테스트 시나리오를 정의합니다.
+# ============================================================================
+
 testSuite:
-  name: Customer Support Agent Unit Tests
-  version: 1.0.0
+  name: Customer Support Agent Unit Tests  # 테스트 스위트 이름
+  version: 1.0.0  # 테스트 스위트 버전
 
 tests:
-  - name: test_prompt_rendering
-    type: unit
-    description: 프롬프트 템플릿 렌더링 테스트
+  # --------------------------------------------------------------------------
+  # 프롬프트 템플릿 렌더링 테스트
+  # --------------------------------------------------------------------------
+  # User Prompt Template의 변수({{user_input}}, {{context}} 등)가
+  # 올바르게 치환되는지 확인
+  - name: test_prompt_rendering  # 테스트 이름 (고유 식별자)
+    type: unit  # 테스트 타입: unit (단위), integration (통합), evaluation (평가)
+    description: 프롬프트 템플릿 렌더링 테스트  # 테스트 목적 설명
+    
+    # 테스트 입력 데이터
     input:
-      user_input: "제품 반품을 하고 싶어요"
-      context:
+      user_input: "제품 반품을 하고 싶어요"  # 사용자 입력 시뮬레이션
+      context:  # 컨텍스트 정보
         user_id: "user123"
         session_id: "session456"
+    
+    # 예상 결과 (검증 조건)
     expected:
-      contains:
+      contains:  # 렌더링된 프롬프트에 포함되어야 할 키워드
         - "반품"
         - "도움"
-    timeout: 5
+    
+    timeout: 5  # 테스트 타임아웃 (초)
 
+  # --------------------------------------------------------------------------
+  # 도구 정의 검증 테스트
+  # --------------------------------------------------------------------------
+  # 도구가 올바르게 정의되어 있고 파라미터가 유효한지 확인
   - name: test_tool_definition_validation
     type: unit
     description: 도구 정의 검증 테스트
+    
     input:
-      tool_name: "search-knowledge-base"
+      tool_name: "search-knowledge-base"  # 검증할 도구 이름
       parameters:
-        query: "반품 절차"
+        query: "반품 절차"  # 테스트 파라미터
     expected:
-      tool_exists: true
-      parameters_valid: true
+      tool_exists: true  # 도구가 존재해야 함
+      parameters_valid: true  # 파라미터가 유효해야 함
     timeout: 3
 
+  # --------------------------------------------------------------------------
+  # Agent 정의 파일 로딩 테스트
+  # --------------------------------------------------------------------------
+  # agent-definition.yaml 파일이 올바르게 로드되고 필수 필드가 있는지 확인
   - name: test_agent_definition_loading
     type: unit
     description: Agent 정의 파일 로딩 테스트
+    
     input:
-      definition_file: "agent-definition.yaml"
+      definition_file: "agent-definition.yaml"  # 로드할 정의 파일
     expected:
-      metadata_name: "customer-support-agent"
-      metadata_version: "1.0.0"
-      spec_foundationModel_provider: "aws"
+      metadata_name: "customer-support-agent"  # 예상 메타데이터 이름
+      metadata_version: "1.0.0"  # 예상 버전
+      spec_foundationModel_provider: "aws"  # 예상 프로바이더
     timeout: 2

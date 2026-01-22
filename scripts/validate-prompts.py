@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 """
 프롬프트 검증 스크립트
+
+- 프롬프트 텍스트(.md, .txt)를 대상으로
+  - 길이/빈 값 여부
+  - 템플릿 변수 형식({{var}}) 점검
+  - password/api key 등 민감 정보 하드코딩 여부
+  - system-prompt 의 최소 길이
+  등을 검사한다.
 """
 import os
 import re

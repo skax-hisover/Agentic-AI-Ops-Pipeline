@@ -1,4 +1,7 @@
 # deploy-pipeline.yaml
+# - Dev → Staging → Production 단계별 배포 파이프라인 템플릿
+# - 실제 구현은 .github/workflows/deploy-pipeline.yml 을 참고
+
 name: Deploy Agent
 
 on:
@@ -24,6 +27,7 @@ env:
 
 jobs:
   deploy-dev:
+    # Job 1: 개발(Dev) 환경 배포
     name: Deploy to Development
     environment: development
     runs-on: ubuntu-latest
@@ -41,20 +45,20 @@ jobs:
         run: |
           pip install -r requirements.txt
 
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials    # AWS 자격 증명 설정
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Download Artifacts
+      - name: Download Artifacts          # Build 파이프라인에서 생성된 아티팩트 다운로드
         uses: actions/download-artifact@v3
         with:
           name: agent-artifacts
           path: build/
 
-      - name: Deploy to Dev
+      - name: Deploy to Dev               # Dev 환경으로 Agent 배포
         run: |
           for agent_dir in agents/*/; do
             agent_name=$(basename "$agent_dir")
@@ -64,18 +68,19 @@ jobs:
               --agent-definition "$agent_dir/agent-definition.yaml"
           done
       
-      - name: Sync Knowledge Base
+      - name: Sync Knowledge Base         # Dev KB 인덱스 동기화
         run: |
           python scripts/sync-knowledge-base.py \
             --environment dev \
             --agent-definition agents/customer-support-agent/agent-definition.yaml
       
-      - name: Run Smoke Tests
+      - name: Run Smoke Tests             # 기본 헬스 체크
         run: |
           python scripts/smoke-tests.py --environment dev
         continue-on-error: true
 
   deploy-staging:
+    # Job 2: Staging 환경 배포 (운영과 유사 환경에서 최종 검증)
     name: Deploy to Staging
     environment: staging
     runs-on: ubuntu-latest
@@ -123,11 +128,12 @@ jobs:
             --environment staging \
             --agent-definition agents/customer-support-agent/agent-definition.yaml
       
-      - name: Run Full Test Suite
+      - name: Run Full Test Suite         # Staging에서 전체 테스트 재실행
         run: |
           pytest tests/ -v
 
   deploy-production:
+    # Job 3: 운영(Production) 환경 배포
     name: Deploy to Production
     environment: production
     runs-on: ubuntu-latest
@@ -159,7 +165,7 @@ jobs:
           name: agent-artifacts
           path: build/
 
-      - name: Deploy to Production
+      - name: Deploy to Production        # 운영 환경으로 최종 배포 (Canary 플래그 포함)
         run: |
           for agent_dir in agents/*/; do
             agent_name=$(basename "$agent_dir")
@@ -176,10 +182,10 @@ jobs:
             --environment production \
             --agent-definition agents/customer-support-agent/agent-definition.yaml
       
-      - name: Monitor Deployment
+      - name: Monitor Deployment          # 배포 직후 모니터링
         run: |
           python scripts/monitor-deployment.py --timeout 300
       
-      - name: Run Production Smoke Tests
+      - name: Run Production Smoke Tests  # 운영 환경에서 최종 스모크 테스트
         run: |
           python scripts/smoke-tests.py --environment production

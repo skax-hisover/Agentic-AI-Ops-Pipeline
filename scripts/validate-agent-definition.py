@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """
 Agent 정의 스키마 검증 스크립트
+
+- agents/*/agent-definition.yaml 이 프로젝트에서 정의한 최소 스키마를 만족하는지 확인하고
+- prompts 경로에 실제 파일(system/user 템플릿)이 존재하는지도 함께 체크한다.
+
+Build 파이프라인의 첫 단계(Validate Stage)에서 실행되는 핵심 검증 로직.
 """
 import yaml
 import json

@@ -1,6 +1,7 @@
-name: Test Agent
+name: Test Agent  # AI Agent용 테스트/평가 파이프라인
 
 on:
+  # 코드/테스트/스크립트 변경 시 자동 실행 + 수동 트리거(workflow_dispatch) 지원
   push:
     branches: [main, develop]
     paths:
@@ -20,6 +21,7 @@ env:
 
 jobs:
   unit-test:
+    # 1단계: Python 단위 테스트 (로직 단·프롬프트 렌더링 등 빠른 피드백)
     name: Unit Tests
     runs-on: ubuntu-latest
     steps:
@@ -35,14 +37,17 @@ jobs:
         run: |
           pip install -r requirements.txt
 
+      # tests/unit 하위의 단위 테스트 실행 (실패 시에도 파이프라인 전체를 바로 끊지 않도록 || true 사용 가능)
       - name: Run Unit Tests
         run: |
           pytest tests/unit/ -v --cov=scripts --cov-report=xml || true
       
+      # 프롬프트 템플릿이 정상적으로 렌더링되는지(치환 안 된 변수 등 없는지) 검증
       - name: Test Prompt Rendering
         run: |
           python scripts/test-prompt-rendering.py || true
       
+      # 코드 커버리지 리포트를 Codecov 등에 업로드
       - name: Upload Coverage
         uses: codecov/codecov-action@v3
         if: always()
@@ -51,9 +56,10 @@ jobs:
           fail_ci_if_error: false
 
   integration-test:
+    # 2단계: 통합 테스트 (Agent 호출, 도구/KB 연동 등 시스템 레벨 테스트)
     name: Integration Tests
     runs-on: ubuntu-latest
-    needs: unit-test
+    needs: unit-test          # 단위 테스트 이후 실행
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -67,6 +73,7 @@ jobs:
         run: |
           pip install -r requirements.txt
 
+      # AWS 자격 증명 설정 (통합 테스트에서 실제 클라우드 리소스를 사용할 수 있게 함)
       - name: Configure AWS credentials
         if: env.AWS_ACCESS_KEY_ID != ''
         uses: aws-actions/configure-aws-credentials@v2
@@ -75,6 +82,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
+      # 통합 테스트: 예를 들어 테스트용 환경에 배포된 Agent 엔드포인트를 때리도록 확장 가능
       - name: Run Integration Tests
         run: |
           pytest tests/integration/ -v || true
@@ -82,9 +90,10 @@ jobs:
           TEST_ENVIRONMENT: test
 
   evaluation:
+    # 3단계: 정량 평가 (evaluation-dataset.json 기반 메트릭 계산)
     name: Evaluation Tests
     runs-on: ubuntu-latest
-    needs: integration-test
+    needs: integration-test    # 통합 테스트 이후 실행
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -106,6 +115,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
+      # 각 Agent 디렉터리의 evaluation-dataset.json을 사용해 자동 평가 수행
       - name: Run Evaluation
         run: |
           for agent_dir in agents/*/; do
@@ -119,10 +129,12 @@ jobs:
             fi
           done
       
+      # 평가 결과(JSON/MD 리포트) 생성
       - name: Generate Evaluation Report
         run: |
           python scripts/generate-evaluation-report.py || true
       
+      # 평가 결과 디렉터리를 아티팩트로 업로드하여, PR 리뷰나 이후 비교에 사용
       - name: Upload Evaluation Results
         uses: actions/upload-artifact@v4
         if: always()

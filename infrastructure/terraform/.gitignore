@@ -1,0 +1,27 @@
+# Terraform 관련 파일 제외
+
+# .tfstate 파일
+*.tfstate
+*.tfstate.*
+
+# .tfvars 파일 (실제 값 포함)
+*.tfvars
+!terraform.tfvars.example
+
+# 크래시 로그
+crash.log
+crash.*.log
+
+# override 파일
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# .terraform 디렉토리
+.terraform/
+.terraform.lock.hcl
+
+# CLI 설정 파일
+.terraformrc
+terraform.rc

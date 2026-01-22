@@ -1,0 +1,79 @@
+# Kubernetes Deployment
+# Agent 서비스 배포 정의
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-service
+  namespace: agentic-ai-ops
+  labels:
+    app: agent-service
+    component: agent
+spec:
+  replicas: 2  # 환경에 따라 조정 (production: 3+, dev: 1)
+  selector:
+    matchLabels:
+      app: agent-service
+  template:
+    metadata:
+      labels:
+        app: agent-service
+    spec:
+      containers:
+      - name: agent-service
+        image: your-registry/agent-service:latest  # 실제 이미지로 교체 필요
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        env:
+        - name: AGENT_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: agent-config
+              key: AGENT_NAME
+        - name: ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: agent-config
+              key: ENVIRONMENT
+        - name: AWS_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: agent-config
+              key: AWS_REGION
+        - name: OPENSEARCH_ENDPOINT
+          valueFrom:
+            configMapKeyRef:
+              name: agent-config
+              key: OPENSEARCH_ENDPOINT
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: agent-secrets
+              key: aws-access-key-id
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: agent-secrets
+              key: aws-secret-access-key
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5

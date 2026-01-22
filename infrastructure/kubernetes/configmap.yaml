@@ -1,0 +1,20 @@
+# Kubernetes ConfigMap
+# Agent 설정 및 환경 변수 정의
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: agent-config
+  namespace: agentic-ai-ops
+data:
+  # Agent 설정
+  AGENT_NAME: "customer-support-agent"
+  ENVIRONMENT: "dev"
+  AWS_REGION: "us-east-1"
+  
+  # Knowledge Base 설정
+  OPENSEARCH_ENDPOINT: "https://your-opensearch-endpoint.us-east-1.es.amazonaws.com"
+  S3_BUCKET_NAME: "your-knowledge-base-bucket"
+  
+  # 로깅 설정
+  LOG_LEVEL: "INFO"

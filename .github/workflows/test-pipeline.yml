@@ -5,15 +5,18 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - 'agents/**'
-      - 'tests/**'
-      - 'scripts/**'
+      - 'agents/**'                     # Agent 정의/프롬프트/도구 변경 시
+      - 'tests/**'                      # 테스트 코드/데이터셋 변경 시
+      - 'scripts/**'                    # 테스트 스크립트 변경 시
+      - 'requirements.txt'              # Python 의존성 변경 시
+      - '.github/workflows/test-pipeline.yml'  # 워크플로우 파일 변경 시
   pull_request:
     branches: [main]
     paths:
       - 'agents/**'
       - 'tests/**'
       - 'scripts/**'
+      - 'requirements.txt'
   workflow_dispatch:
 
 env:

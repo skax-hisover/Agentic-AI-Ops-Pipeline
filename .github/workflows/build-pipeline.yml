@@ -7,12 +7,14 @@ on:
     paths:
       - 'agents/**'                     # Agent 정의/프롬프트/도구 변경 시
       - 'scripts/**'                    # 빌드/검증 스크립트 변경 시
-      - '.github/workflows/build-pipeline.yml'
+      - 'requirements.txt'              # Python 의존성 변경 시
+      - '.github/workflows/build-pipeline.yml'  # 워크플로우 파일 변경 시
   pull_request:
     branches: [main]
     paths:
       - 'agents/**'
       - 'scripts/**'
+      - 'requirements.txt'
 
 env:
   PYTHON_VERSION: '3.11'  # 모든 Job에서 공통으로 사용할 Python 버전

@@ -5,6 +5,13 @@ on:
   schedule:
     # 매일 자정(UTC 기준) 실행 → KST 기준 오전 9시
     - cron: '0 0 * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'agents/**'                     # Agent 변경 시 재평가
+      - 'agents/**/tests/evaluation-dataset.json'  # 평가 데이터셋 변경 시
+      - 'scripts/run-evaluation.py'     # 평가 스크립트 변경 시
+      - '.github/workflows/evaluation-pipeline.yml'  # 워크플로우 파일 변경 시
   workflow_dispatch:
     inputs:
       agent_name:

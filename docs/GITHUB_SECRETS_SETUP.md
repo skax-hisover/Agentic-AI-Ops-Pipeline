@@ -1,6 +1,6 @@
 # GitHub Secrets 설정 가이드
 
-GitHub Actions에서 AWS 자격증명을 사용하려면 GitHub Secrets에 다음 값들을 설정해야 합니다.
+GitHub Actions에서 CSP별 자격증명을 사용하려면 GitHub Secrets에 다음 값들을 설정해야 합니다.
 
 ## 필수 Secrets 설정
 
@@ -11,7 +11,7 @@ GitHub Actions에서 AWS 자격증명을 사용하려면 GitHub Secrets에 다�
 3. **New repository secret** 버튼 클릭
 4. 다음 Secrets를 추가:
 
-#### AWS 자격증명 (필수 - 배포 파이프라인용)
+#### AWS 자격증명 (AWS Agent 배포 시 필수)
 
 - **Name**: `AWS_ACCESS_KEY_ID`
   - **Value**: AWS IAM 사용자의 Access Key ID
@@ -19,9 +19,39 @@ GitHub Actions에서 AWS 자격증명을 사용하려면 GitHub Secrets에 다�
 - **Name**: `AWS_SECRET_ACCESS_KEY`
   - **Value**: AWS IAM 사용자의 Secret Access Key
 
-### 2. AWS IAM 사용자 생성 및 권한 설정
+#### Azure 자격증명 (Azure Agent 배포 시 필수)
 
-#### IAM 사용자 생성
+- **Name**: `AZURE_CREDENTIALS`
+  - **Value**: Azure Service Principal의 JSON 형식 자격증명
+  - 형식:
+    ```json
+    {
+      "clientId": "your-client-id",
+      "clientSecret": "your-client-secret",
+      "subscriptionId": "your-subscription-id",
+      "tenantId": "your-tenant-id"
+    }
+    ```
+
+#### GCP 자격증명 (GCP Agent 배포 시 필수)
+
+- **Name**: `GCP_SA_KEY`
+  - **Value**: GCP Service Account의 JSON 키 파일 내용
+  - 생성 방법:
+    ```bash
+    # GCP Service Account 생성 및 키 다운로드
+    gcloud iam service-accounts create github-actions-deployer \
+      --display-name="GitHub Actions Deployer"
+    
+    gcloud iam service-accounts keys create key.json \
+      --iam-account=github-actions-deployer@PROJECT_ID.iam.gserviceaccount.com
+    
+    # key.json 파일의 전체 내용을 GCP_SA_KEY Secret에 복사
+    ```
+
+### 2. CSP별 자격증명 생성 및 권한 설정
+
+#### AWS IAM 사용자 생성
 
 ```bash
 # AWS CLI를 사용하여 IAM 사용자 생성
@@ -31,7 +61,50 @@ aws iam create-user --user-name github-actions-agent-deployer
 aws iam create-access-key --user-name github-actions-agent-deployer
 ```
 
-#### 필요한 IAM 권한
+#### Azure Service Principal 생성
+
+```bash
+# Azure CLI를 사용하여 Service Principal 생성
+az login
+az account set --subscription "your-subscription-id"
+
+az ad sp create-for-rbac --name "github-actions-deployer" \
+  --role contributor \
+  --scopes /subscriptions/your-subscription-id \
+  --sdk-auth
+
+# 출력된 JSON을 AZURE_CREDENTIALS Secret에 복사
+```
+
+#### GCP Service Account 생성
+
+```bash
+# GCP Service Account 생성
+gcloud iam service-accounts create github-actions-deployer \
+  --display-name="GitHub Actions Deployer" \
+  --project=YOUR_PROJECT_ID
+
+# 필요한 권한 부여
+gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+  --member="serviceAccount:github-actions-deployer@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/aiplatform.admin"
+
+gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+  --member="serviceAccount:github-actions-deployer@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/cloudfunctions.admin"
+
+gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+  --member="serviceAccount:github-actions-deployer@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/storage.admin"
+
+# 키 생성
+gcloud iam service-accounts keys create key.json \
+  --iam-account=github-actions-deployer@YOUR_PROJECT_ID.iam.gserviceaccount.com
+
+# key.json 파일의 전체 내용을 GCP_SA_KEY Secret에 복사
+```
+
+#### AWS 필요한 IAM 권한
 
 다음 정책을 IAM 사용자에게 연결해야 합니다:
 
@@ -114,9 +187,11 @@ GitHub Environments를 사용하여 환경별로 다른 자격증명을 설정�
 
 ## 배포 파이프라인에서의 필수 사용
 
-`deploy-pipeline.yml`에서는 AWS 자격증명이 **필수**입니다:
-- Secrets가 없으면 배포 단계에서 오류 발생
-- 반드시 Secrets를 설정해야 합니다
+`deploy-pipeline.yml`에서는 사용하는 CSP에 따라 해당 자격증명이 **필수**입니다:
+- Agent 정의에서 `provider: aws`인 경우: AWS 자격증명 필수
+- Agent 정의에서 `provider: azure`인 경우: Azure 자격증명 필수
+- Agent 정의에서 `provider: gcp`인 경우: GCP 자격증명 필수
+- 파이프라인은 자동으로 Agent 정의를 확인하여 필요한 CSP 자격증명만 설정합니다
 
 ## 보안 모범 사례
 

@@ -1,0 +1,8 @@
+# GCP Terraform 변수 값 예시
+# 이 파일을 terraform.tfvars로 복사하고 실제 값으로 수정하세요.
+
+project_id = "your-gcp-project-id"
+region     = "asia-northeast3"  # 서울
+zone       = "asia-northeast3-a"
+environment = "dev"
+agent_name  = "customer-support-agent"

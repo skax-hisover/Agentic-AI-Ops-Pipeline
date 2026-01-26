@@ -12,7 +12,7 @@ NC='\033[0m' # No Color
 
 # 기본 변수
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TERRAFORM_DIR="${SCRIPT_DIR}/../terraform"
+TERRAFORM_DIR="${SCRIPT_DIR}/../aws"
 ENVIRONMENT="${1:-dev}"
 
 # 환경 검증

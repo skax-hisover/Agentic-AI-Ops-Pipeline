@@ -32,39 +32,81 @@ AI Agent의 빌드 및 배포는 전통적인 애플리케이션과 달리 **프
 ```
 agent-project/
 ├── agents/                    # Agent 정의
-│   ├── {agent-name}/
-│   │   ├── agent-definition.yaml    # Agent 스키마 정의
-│   │   ├── prompts/                 # 프롬프트 템플릿
-│   │   │   ├── system-prompt.md
-│   │   │   ├── user-prompt-template.md
-│   │   │   └── versions/            # 프롬프트 버전 관리
-│   │   ├── tools/                   # 도구 정의
-│   │   │   ├── tool-definitions.yaml
-│   │   │   └── implementations/     # 도구 구현 코드
-│   │   ├── knowledge-base/          # Knowledge Base 설정
-│   │   │   ├── data-sources.yaml
-│   │   │   └── embedding-config.yaml
-│   │   └── tests/                   # 테스트 시나리오
-│   │       ├── unit-tests.yaml
-│   │       ├── integration-tests.yaml
-│   │       └── evaluation-dataset.json
+│   └── customer-support-agent/
+│       ├── agent-definition.yaml    # Agent 스키마 정의
+│       ├── prompts/                 # 프롬프트 템플릿
+│       │   ├── system-prompt.md
+│       │   ├── user-prompt-template.md
+│       │   └── versions/            # 프롬프트 버전 관리
+│       │       ├── v1.0.0/
+│       │       └── v1.2.0/
+│       ├── tools/                   # 도구 정의
+│       │   ├── tool-definitions.yaml
+│       │   └── implementations/     # 도구 구현 코드
+│       │       ├── search-knowledge-base.py
+│       │       ├── create-ticket.py
+│       │       └── requirements.txt
+│       ├── knowledge-base/          # Knowledge Base 설정
+│       │   ├── data-sources.yaml
+│       │   └── embedding-config.yaml
+│       └── tests/                   # 테스트 시나리오
+│           ├── unit-tests.yaml
+│           ├── integration-tests.yaml
+│           └── evaluation-dataset.json
 ├── infrastructure/            # 인프라 코드
-│   ├── terraform/             # 또는 CloudFormation, Bicep
+│   ├── aws/                   # AWS Terraform 인프라 정의
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   ├── outputs.tf
+│   │   └── terraform.tfvars.example
 │   ├── kubernetes/            # K8s 매니페스트
+│   │   ├── namespace.yaml
+│   │   ├── configmap.yaml
+│   │   ├── deployment.yaml
+│   │   ├── service.yaml
+│   │   └── ingress.yaml
 │   └── scripts/               # 배포 스크립트
-├── pipelines/                 # CI/CD 파이프라인 정의
+│       ├── deploy-infrastructure.sh
+│       ├── destroy-infrastructure.sh
+│       └── deploy-kubernetes.sh
+├── pipelines/                 # CI/CD 파이프라인 정의 (템플릿)
 │   ├── build-pipeline.yaml
 │   ├── test-pipeline.yaml
 │   ├── deploy-pipeline.yaml
 │   └── evaluation-pipeline.yaml
+├── .github/workflows/         # GitHub Actions 워크플로우
+│   ├── build-pipeline.yml
+│   ├── test-pipeline.yml
+│   ├── deploy-pipeline.yml
+│   └── evaluation-pipeline.yml
+├── scripts/                   # 빌드/배포/검증 스크립트
+│   ├── validate-agent-definition.py
+│   ├── validate-prompts.py
+│   ├── validate-tools.py
+│   ├── check-security-policies.py
+│   ├── build-agent.py
+│   ├── deploy-agent.py
+│   ├── sync-knowledge-base.py
+│   ├── run-evaluation.py
+│   ├── monitor-deployment.py
+│   ├── test-prompt-rendering.py
+│   ├── generate-evaluation-report.py
+│   ├── compare-evaluation-results.py
+│   ├── smoke-tests.py
+│   └── manage-prompt-versions.py
+├── tests/                     # 테스트 코드
+│   ├── unit/
+│   │   └── test_agent_definition.py
+│   └── integration/
+│       └── test_agent_integration.py
 ├── templates/                 # Agent 템플릿
-│   ├── basic-agent-template/
-│   ├── rag-agent-template/
-│   └── multi-agent-template/
-└── docs/                      # 문서
-    ├── architecture.md
-    ├── deployment-guide.md
-    └── testing-guide.md
+│   └── README.md
+├── docs/                      # 문서
+│   ├── README.md
+│   └── GITHUB_SECRETS_SETUP.md
+├── README.md                  # 프로젝트 메인 README
+├── requirements.txt           # Python 의존성
+└── Agentic_AI_Ops_Pipeline_Guide.md  # 이 가이드 문서
 ```
 
 #### 1.2 Agent 정의 스키마 (YAML 예시)
@@ -248,69 +290,102 @@ graph LR
 
 #### 1. Build Stage
 ```yaml
-# build-pipeline.yaml (예시: GitHub Actions)
+# .github/workflows/build-pipeline.yml (실제 구현)
 name: Build Agent
 
 on:
   push:
     branches: [main, develop]
+    paths:
+      - 'agents/**'
+      - 'scripts/**'
   pull_request:
     branches: [main]
+    paths:
+      - 'agents/**'
+      - 'scripts/**'
+
+env:
+  PYTHON_VERSION: '3.11'
 
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install dependencies
+        run: pip install -r requirements.txt
       - name: Validate Agent Definition
         run: |
-          # Agent 정의 스키마 검증
           python scripts/validate-agent-definition.py agents/*/agent-definition.yaml
-      
       - name: Validate Prompts
         run: |
-          # 프롬프트 문법 및 구조 검증
           python scripts/validate-prompts.py agents/*/prompts/
-      
+      - name: Validate Tool Definitions
+        run: |
+          python scripts/validate-tools.py agents/*/tools/tool-definitions.yaml
       - name: Check Security
         run: |
-          # 보안 정책 검증
           python scripts/check-security-policies.py agents/*/
 
   build:
     needs: validate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install dependencies
+        run: pip install -r requirements.txt
       - name: Build Agent Artifacts
         run: |
-          # Agent 정의를 배포 가능한 형태로 변환
-          python scripts/build-agent.py --agent-dir agents/customer-support-agent
-      
+          for agent_dir in agents/*/; do
+            agent_name=$(basename "$agent_dir")
+            python scripts/build-agent.py --agent-dir "$agent_dir"
+          done
       - name: Package Artifacts
         run: |
-          # 배포 패키지 생성
+          mkdir -p build
           tar -czf agent-artifacts.tar.gz build/
-      
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: agent-artifacts
           path: agent-artifacts.tar.gz
+          retention-days: 7
 ```
 
 #### 2. Test Stage
 ```yaml
-# test-pipeline.yaml
+# .github/workflows/test-pipeline.yml (실제 구현)
+name: Test Agent
+
+on:
+  workflow_run:
+    workflows: ["Build Agent"]
+    types: [completed]
+  workflow_dispatch:
+
 jobs:
   unit-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
       - name: Run Unit Tests
         run: |
           pytest tests/unit/ -v
-      
       - name: Test Prompt Rendering
         run: |
           python scripts/test-prompt-rendering.py
@@ -318,37 +393,39 @@ jobs:
   integration-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Deploy Test Environment
-        run: |
-          # 테스트 환경에 Agent 배포
-          terraform apply -auto-approve -var="environment=test"
-      
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
       - name: Run Integration Tests
         run: |
           pytest tests/integration/ -v
-      
-      - name: Cleanup Test Environment
-        if: always()
-        run: |
-          terraform destroy -auto-approve -var="environment=test"
 
   evaluation:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
       - name: Run Evaluation
         run: |
-          python scripts/run-evaluation.py \
-            --dataset tests/evaluation-dataset.json \
-            --agent agents/customer-support-agent
-      
+          for agent_dir in agents/*/; do
+            python scripts/run-evaluation.py \
+              --dataset "$agent_dir/tests/evaluation-dataset.json" \
+              --agent "$agent_dir"
+          done
       - name: Generate Evaluation Report
         run: |
           python scripts/generate-evaluation-report.py
-      
       - name: Upload Evaluation Results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: evaluation-results
           path: evaluation-results/
@@ -356,19 +433,57 @@ jobs:
 
 #### 3. Deploy Stage
 ```yaml
-# deploy-pipeline.yaml
+# .github/workflows/deploy-pipeline.yml (실제 구현)
+name: Deploy Agent
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'agents/**'
+      - 'infrastructure/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - production
+
 jobs:
   deploy-dev:
     environment: development
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: agent-artifacts
+          path: build/
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
       - name: Deploy to Dev
         run: |
-          python scripts/deploy-agent.py \
-            --environment dev \
-            --agent-definition agents/customer-support-agent/agent-definition.yaml
-      
+          for agent_dir in agents/*/; do
+            python scripts/deploy-agent.py \
+              --environment dev \
+              --agent-definition "$agent_dir/agent-definition.yaml"
+          done
       - name: Run Smoke Tests
         run: |
           python scripts/smoke-tests.py --environment dev
@@ -378,30 +493,60 @@ jobs:
     environment: staging
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: agent-artifacts
+          path: build/
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
       - name: Deploy to Staging
         run: |
-          python scripts/deploy-agent.py \
-            --environment staging \
-            --agent-definition agents/customer-support-agent/agent-definition.yaml
-      
-      - name: Run Full Test Suite
-        run: |
-          pytest tests/ -v
+          for agent_dir in agents/*/; do
+            python scripts/deploy-agent.py \
+              --environment staging \
+              --agent-definition "$agent_dir/agent-definition.yaml"
+          done
 
   deploy-production:
     needs: deploy-staging
     environment: production
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: agent-artifacts
+          path: build/
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
       - name: Deploy to Production
         run: |
-          python scripts/deploy-agent.py \
-            --environment production \
-            --agent-definition agents/customer-support-agent/agent-definition.yaml \
-            --enable-canary
-      
+          for agent_dir in agents/*/; do
+            python scripts/deploy-agent.py \
+              --environment production \
+              --agent-definition "$agent_dir/agent-definition.yaml"
+          done
       - name: Monitor Deployment
         run: |
           python scripts/monitor-deployment.py --timeout 300
@@ -629,28 +774,31 @@ def run_evaluation(dataset_file, agent_def):
 - [ ] 테스트 시나리오 구조 설계
 
 #### 1.2 기본 검증 도구 개발
-- [ ] Agent 정의 스키마 검증 스크립트
-- [ ] 프롬프트 검증 스크립트
-- [ ] 보안 정책 검증 스크립트
-- [ ] 기본 빌드 스크립트
+- [x] Agent 정의 스키마 검증 스크립트 (`scripts/validate-agent-definition.py`)
+- [x] 프롬프트 검증 스크립트 (`scripts/validate-prompts.py`)
+- [x] 도구 정의 검증 스크립트 (`scripts/validate-tools.py`)
+- [x] 보안 정책 검증 스크립트 (`scripts/check-security-policies.py`)
+- [x] 기본 빌드 스크립트 (`scripts/build-agent.py`)
 
 #### 1.3 CI/CD 파이프라인 기본 구조
-- [ ] GitHub Actions / GitLab CI / Jenkins 설정
-- [ ] Build Stage 구현
-- [ ] 기본 테스트 Stage 구현
+- [x] GitHub Actions 설정 (`.github/workflows/`)
+- [x] Build Stage 구현 (`build-pipeline.yml`)
+- [x] Test Stage 구현 (`test-pipeline.yml`)
+- [x] Deploy Stage 구현 (`deploy-pipeline.yml`)
+- [x] Evaluation Stage 구현 (`evaluation-pipeline.yml`)
 
 ### Phase 2: 테스트 및 평가 체계 (2-3개월)
 
 #### 2.1 테스트 프레임워크 구축
-- [ ] 단위 테스트 프레임워크
-- [ ] 통합 테스트 환경 구축
-- [ ] 테스트 데이터셋 관리 시스템
+- [x] 단위 테스트 프레임워크 (`tests/unit/`, `scripts/test-prompt-rendering.py`)
+- [x] 통합 테스트 환경 구축 (`tests/integration/`)
+- [x] 테스트 데이터셋 관리 시스템 (`agents/*/tests/unit-tests.yaml`, `integration-tests.yaml`, `evaluation-dataset.json`)
 
 #### 2.2 평가 파이프라인 구축
-- [ ] 평가 스크립트 개발
-- [ ] 평가 메트릭 정의 및 구현
-- [ ] 평가 리포트 자동 생성
-- [ ] 임계값 기반 승인/거부 로직
+- [x] 평가 스크립트 개발 (`scripts/run-evaluation.py`)
+- [x] 평가 메트릭 정의 및 구현 (정확도, 관련성, 완전성, 응답 시간)
+- [x] 평가 리포트 자동 생성 (`scripts/generate-evaluation-report.py`)
+- [x] 임계값 기반 승인/거부 로직 (`scripts/compare-evaluation-results.py`)
 
 #### 2.3 A/B 테스트 지원
 - [ ] A/B 테스트 인프라 구축
@@ -660,19 +808,21 @@ def run_evaluation(dataset_file, agent_def):
 ### Phase 3: 배포 자동화 (2-3개월)
 
 #### 3.1 배포 스크립트 개발
-- [ ] CSP별 배포 스크립트 (AWS/Azure/GCP)
-- [ ] 환경별 설정 관리 (Dev/Staging/Prod)
-- [ ] 롤백 메커니즘 구현
+- [x] CSP별 배포 스크립트 (AWS/Azure/GCP) (`scripts/deploy-agent.py`)
+- [x] 환경별 설정 관리 (Dev/Staging/Prod) (`scripts/deploy-agent.py`)
+- [x] 배포 모니터링 (`scripts/monitor-deployment.py`)
+- [x] Smoke 테스트 (`scripts/smoke-tests.py`)
 
 #### 3.2 Knowledge Base 관리 자동화
-- [ ] 데이터 소스 동기화 스크립트
-- [ ] 벡터 인덱스 업데이트 자동화
-- [ ] 인덱스 버전 관리
+- [x] 데이터 소스 동기화 스크립트 (`scripts/sync-knowledge-base.py`)
+- [x] 벡터 인덱스 업데이트 자동화 (OpenSearch, Azure Search, Vertex AI Search 지원)
+- [x] 프롬프트 버전 관리 (`scripts/manage-prompt-versions.py`)
 
 #### 3.3 모니터링 및 알림
-- [ ] 배포 후 자동 모니터링
-- [ ] 메트릭 수집 및 대시보드
-- [ ] 알림 설정 (Slack, Email 등)
+- [x] 배포 후 자동 모니터링 (`scripts/monitor-deployment.py`)
+- [x] 메트릭 수집 (에러율, 지연시간, 성공률)
+- [ ] 대시보드 (구현 예정)
+- [ ] 알림 설정 (Slack, Email 등) (구현 예정)
 
 ### Phase 4: 고도화 (지속적)
 
@@ -714,30 +864,30 @@ def run_evaluation(dataset_file, agent_def):
 ### 구현 체크리스트
 
 #### Build Stage
-- [ ] Agent 정의 스키마 검증
-- [ ] 프롬프트 검증 (문법, 보안, 길이 등)
-- [ ] 도구 정의 검증
-- [ ] 보안 정책 검증
-- [ ] 배포 아티팩트 생성
+- [x] Agent 정의 스키마 검증 (`scripts/validate-agent-definition.py`)
+- [x] 프롬프트 검증 (문법, 보안, 길이 등) (`scripts/validate-prompts.py`)
+- [x] 도구 정의 검증 (`scripts/validate-tools.py`)
+- [x] 보안 정책 검증 (`scripts/check-security-policies.py`)
+- [x] 배포 아티팩트 생성 (`scripts/build-agent.py`)
 
 #### Test Stage
-- [ ] 단위 테스트 실행
-- [ ] 통합 테스트 실행
-- [ ] 평가 테스트 실행
-- [ ] 성능 테스트 실행
-- [ ] 보안 스캔
+- [x] 단위 테스트 실행 (`tests/unit/`, `scripts/test-prompt-rendering.py`)
+- [x] 통합 테스트 실행 (`tests/integration/`)
+- [x] 평가 테스트 실행 (`scripts/run-evaluation.py`)
+- [ ] 성능 테스트 실행 (구현 예정)
+- [x] 보안 스캔 (`scripts/check-security-policies.py`)
 
 #### Deploy Stage
-- [ ] Dev 환경 배포
-- [ ] Staging 환경 배포
-- [ ] Production 환경 배포 (수동 승인)
-- [ ] 배포 후 검증 (Smoke Tests)
+- [x] Dev 환경 배포 (`scripts/deploy-agent.py`, `.github/workflows/deploy-pipeline.yml`)
+- [x] Staging 환경 배포 (`scripts/deploy-agent.py`, `.github/workflows/deploy-pipeline.yml`)
+- [x] Production 환경 배포 (수동 승인) (`scripts/deploy-agent.py`, `.github/workflows/deploy-pipeline.yml`)
+- [x] 배포 후 검증 (Smoke Tests) (`scripts/smoke-tests.py`)
 
 #### Post-Deploy
-- [ ] 모니터링 설정
-- [ ] 알림 설정
-- [ ] 롤백 준비
-- [ ] 문서 업데이트
+- [x] 모니터링 설정 (`scripts/monitor-deployment.py`)
+- [ ] 알림 설정 (구현 예정)
+- [ ] 롤백 준비 (구현 예정)
+- [x] 문서 업데이트 (README, 가이드 문서)
 
 ---
 

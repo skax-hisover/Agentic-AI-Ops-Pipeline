@@ -8,8 +8,17 @@
 implementations/
 ├── search-knowledge-base.py  # Knowledge Base 검색 도구 구현
 ├── create-ticket.py          # 티켓 생성 도구 구현
+├── requirements.txt          # Python 의존성
+├── .gitignore                # Git 무시 파일
 └── README.md                 # 이 파일
 ```
+
+## 파일 설명
+
+- `search-knowledge-base.py`: Knowledge Base에서 문서를 검색하는 도구 구현
+- `create-ticket.py`: 고객 지원 티켓을 생성하는 도구 구현
+- `requirements.txt`: 도구 구현에 필요한 Python 패키지 목록
+- `.gitignore`: Git에서 무시할 파일 목록 (예: `__pycache__/`, `*.pyc`)
 
 ## 도구 타입별 배포 방식
 

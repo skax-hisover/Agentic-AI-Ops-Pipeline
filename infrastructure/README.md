@@ -6,12 +6,24 @@
 
 ```
 infrastructure/
-├── terraform/          # Terraform 코드 (AWS 인프라 정의)
+├── aws/                # AWS Terraform 코드
 │   ├── main.tf         # 메인 리소스 정의
 │   ├── variables.tf    # 변수 정의
 │   ├── outputs.tf      # 출력값 정의
 │   ├── terraform.tfvars.example  # 변수 값 예시
-│   └── README.md       # Terraform 사용 가이드
+│   └── README.md       # AWS Terraform 사용 가이드
+├── azure/              # Azure Bicep 코드
+│   ├── main.bicep      # 메인 Bicep 템플릿
+│   ├── parameters.dev.bicepparam      # Dev 환경 파라미터
+│   ├── parameters.staging.bicepparam  # Staging 환경 파라미터
+│   ├── parameters.production.bicepparam # Production 환경 파라미터
+│   └── README.md       # Azure Bicep 사용 가이드
+├── gcp/                # GCP Terraform 코드
+│   ├── main.tf         # 메인 리소스 정의
+│   ├── variables.tf    # 변수 정의
+│   ├── outputs.tf      # 출력값 정의
+│   ├── terraform.tfvars.example  # 변수 값 예시
+│   └── README.md       # GCP Terraform 사용 가이드
 ├── kubernetes/         # Kubernetes 매니페스트
 │   ├── namespace.yaml  # 네임스페이스 정의
 │   ├── configmap.yaml  # 설정 및 환경 변수
@@ -21,20 +33,38 @@ infrastructure/
 │   ├── ingress.yaml    # 외부 접근을 위한 Ingress
 │   └── README.md       # Kubernetes 사용 가이드
 └── scripts/            # 배포 스크립트
-    ├── deploy-infrastructure.sh  # Terraform 인프라 배포
-    ├── destroy-infrastructure.sh # Terraform 인프라 삭제
-    ├── deploy-kubernetes.sh      # Kubernetes 배포
+    ├── deploy-infrastructure.sh        # AWS Terraform 인프라 배포
+    ├── destroy-infrastructure.sh        # AWS Terraform 인프라 삭제
+    ├── deploy-azure-infrastructure.sh   # Azure Bicep 인프라 배포
+    ├── destroy-azure-infrastructure.sh  # Azure 인프라 삭제
+    ├── deploy-gcp-infrastructure.sh     # GCP Terraform 인프라 배포
+    ├── destroy-gcp-infrastructure.sh   # GCP Terraform 인프라 삭제
+    ├── deploy-kubernetes.sh             # Kubernetes 배포
     └── README.md       # 스크립트 사용 가이드
 ```
 
 ## 주요 기능
 
-### Terraform
+### AWS (Terraform)
 - AWS Bedrock Agent를 위한 인프라 정의
 - S3 버킷 (Knowledge Base 문서 저장)
 - OpenSearch 도메인 (벡터 스토어)
 - IAM 역할 (Lambda 및 Bedrock Agent용)
 - CloudWatch Log Group
+
+### Azure (Bicep)
+- Azure OpenAI Assistant를 위한 인프라 정의
+- Azure Storage Account (Knowledge Base 문서 저장)
+- Azure Cognitive Search (벡터 스토어)
+- Azure Functions (도구 구현용)
+- Application Insights (모니터링)
+
+### GCP (Terraform)
+- GCP Vertex AI Agent를 위한 인프라 정의
+- Cloud Storage Bucket (Knowledge Base 문서 저장)
+- Cloud Functions (도구 구현용)
+- Service Account 및 IAM 역할
+- Cloud Logging 및 Monitoring
 
 ### Kubernetes
 - Agent 서비스 배포 매니페스트
@@ -42,15 +72,15 @@ infrastructure/
 - Service 및 Ingress 설정
 
 ### Scripts
-- 인프라 배포 자동화 스크립트
+- CSP별 인프라 배포 자동화 스크립트
 - 환경별 배포 지원 (dev, staging, production)
 
 ## 빠른 시작
 
-### Terraform 인프라 배포
+### AWS 인프라 배포
 
 ```bash
-cd infrastructure/terraform
+cd infrastructure/aws
 cp terraform.tfvars.example terraform.tfvars
 # terraform.tfvars 파일 편집
 terraform init
@@ -62,6 +92,27 @@ terraform apply -var="environment=dev"
 
 ```bash
 ./scripts/deploy-infrastructure.sh dev
+```
+
+### Azure 인프라 배포
+
+```bash
+# Azure CLI 로그인
+az login
+
+# 스크립트 사용 (권장)
+./scripts/deploy-azure-infrastructure.sh dev
+```
+
+### GCP 인프라 배포
+
+```bash
+# GCP 인증
+gcloud auth login
+gcloud auth application-default login
+
+# 스크립트 사용 (권장)
+./scripts/deploy-gcp-infrastructure.sh dev YOUR_PROJECT_ID
 ```
 
 ### Kubernetes 배포

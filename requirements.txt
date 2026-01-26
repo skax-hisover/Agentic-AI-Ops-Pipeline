@@ -1,4 +1,7 @@
 # Python 의존성 패키지
+# ============================================================================
+# 필수 패키지 (모든 CSP에서 공통으로 사용)
+# ============================================================================
 pyyaml>=6.0
 jsonschema>=4.17.0
 
@@ -7,16 +10,44 @@ pytest>=7.4.0
 pytest-cov>=4.1.0
 pytest-mock>=3.11.0
 
-# AWS SDK (선택사항)
-boto3>=1.28.0
-
-# Azure SDK (선택사항)
-# azure-identity>=1.14.0
-# azure-ai-openai>=1.0.0
-
-# GCP SDK (선택사항)
-# google-cloud-dialogflow>=2.28.0
-# google-cloud-aiplatform>=1.38.0
-
 # 유틸리티
 requests>=2.31.0
+
+# ============================================================================
+# CSP별 SDK (사용하는 CSP에 따라 선택적으로 설치)
+# ============================================================================
+
+# AWS SDK (AWS Agent 배포 시 필요)
+# 사용 시: pip install boto3
+boto3>=1.28.0
+
+# Azure SDK (Azure Agent 배포 시 필요)
+# 사용 시: pip install azure-identity azure-ai-openai azure-identity azure-storage-blob
+azure-identity>=1.14.0
+azure-ai-openai>=1.0.0
+azure-storage-blob>=12.19.0
+azure-search-documents>=11.4.0
+
+# GCP SDK (GCP Agent 배포 시 필요)
+# 사용 시: pip install google-cloud-aiplatform google-cloud-storage google-cloud-functions
+google-cloud-aiplatform>=1.38.0
+google-cloud-storage>=2.14.0
+google-cloud-functions>=1.15.0
+
+# ============================================================================
+# 설치 방법
+# ============================================================================
+# 전체 설치 (모든 CSP 지원):
+#   pip install -r requirements.txt
+#
+# 특정 CSP만 설치:
+#   AWS만: pip install pyyaml jsonschema pytest boto3 requests
+#   Azure만: pip install pyyaml jsonschema pytest azure-identity azure-ai-openai azure-storage-blob azure-search-documents requests
+#   GCP만: pip install pyyaml jsonschema pytest google-cloud-aiplatform google-cloud-storage google-cloud-functions requests
+#
+# 개발 환경 (테스트 포함):
+#   pip install -r requirements.txt
+#
+# 프로덕션 환경 (테스트 제외):
+#   pip install pyyaml jsonschema boto3 azure-identity azure-ai-openai azure-storage-blob azure-search-documents google-cloud-aiplatform google-cloud-storage google-cloud-functions requests
+# ============================================================================

@@ -43,13 +43,44 @@ jobs:
         run: |
           pip install -r requirements.txt
 
-      # AWS 자격 증명 설정 (실제 Bedrock/Infra에 배포할 권한 부여)
+      # CSP별 자격 증명 설정 (Agent 정의에서 provider 확인 후 해당 CSP 자격증명만 설정)
+      - name: Detect CSP providers
+        id: detect-csp
+        run: |
+          CSP_PROVIDERS=""
+          for agent_dir in agents/*/; do
+            if [ -f "$agent_dir/agent-definition.yaml" ]; then
+              PROVIDER=$(grep -A 5 "foundationModel:" "$agent_dir/agent-definition.yaml" | grep "provider:" | awk '{print $2}' | tr -d '"' | tr -d "'")
+              if [ ! -z "$PROVIDER" ]; then
+                CSP_PROVIDERS="$CSP_PROVIDERS $PROVIDER"
+              fi
+            fi
+          done
+          CSP_PROVIDERS=$(echo $CSP_PROVIDERS | tr ' ' '\n' | sort -u | tr '\n' ' ')
+          echo "providers=$CSP_PROVIDERS" >> $GITHUB_OUTPUT
+          echo "Detected providers: $CSP_PROVIDERS"
+      
       - name: Configure AWS credentials
+        if: contains(steps.detect-csp.outputs.providers, 'aws')
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
+      
+      - name: Configure Azure credentials
+        if: contains(steps.detect-csp.outputs.providers, 'azure')
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Configure GCP credentials
+        if: contains(steps.detect-csp.outputs.providers, 'gcp')
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+        - name: Set up Cloud SDK
+          uses: google-github-actions/setup-gcloud@v1
 
       # Build 파이프라인에서 생성한 agent-artifacts.tar.gz 다운로드
       - name: Download Artifacts
@@ -102,12 +133,45 @@ jobs:
         run: |
           pip install -r requirements.txt
 
+      - name: Detect CSP providers
+        id: detect-csp
+        run: |
+          CSP_PROVIDERS=""
+          for agent_dir in agents/*/; do
+            if [ -f "$agent_dir/agent-definition.yaml" ]; then
+              PROVIDER=$(grep -A 5 "foundationModel:" "$agent_dir/agent-definition.yaml" | grep "provider:" | awk '{print $2}' | tr -d '"' | tr -d "'")
+              if [ ! -z "$PROVIDER" ]; then
+                CSP_PROVIDERS="$CSP_PROVIDERS $PROVIDER"
+              fi
+            fi
+          done
+          CSP_PROVIDERS=$(echo $CSP_PROVIDERS | tr ' ' '\n' | sort -u | tr '\n' ' ')
+          echo "providers=$CSP_PROVIDERS" >> $GITHUB_OUTPUT
+          echo "Detected providers: $CSP_PROVIDERS"
+      
       - name: Configure AWS credentials
+        if: contains(steps.detect-csp.outputs.providers, 'aws')
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
+      
+      - name: Configure Azure credentials
+        if: contains(steps.detect-csp.outputs.providers, 'azure')
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Configure GCP credentials
+        if: contains(steps.detect-csp.outputs.providers, 'gcp')
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      
+      - name: Set up Cloud SDK
+        if: contains(steps.detect-csp.outputs.providers, 'gcp')
+        uses: google-github-actions/setup-gcloud@v1
 
       - name: Download Artifacts
         uses: actions/download-artifact@v4
@@ -158,12 +222,45 @@ jobs:
         run: |
           pip install -r requirements.txt
 
+      - name: Detect CSP providers
+        id: detect-csp
+        run: |
+          CSP_PROVIDERS=""
+          for agent_dir in agents/*/; do
+            if [ -f "$agent_dir/agent-definition.yaml" ]; then
+              PROVIDER=$(grep -A 5 "foundationModel:" "$agent_dir/agent-definition.yaml" | grep "provider:" | awk '{print $2}' | tr -d '"' | tr -d "'")
+              if [ ! -z "$PROVIDER" ]; then
+                CSP_PROVIDERS="$CSP_PROVIDERS $PROVIDER"
+              fi
+            fi
+          done
+          CSP_PROVIDERS=$(echo $CSP_PROVIDERS | tr ' ' '\n' | sort -u | tr '\n' ' ')
+          echo "providers=$CSP_PROVIDERS" >> $GITHUB_OUTPUT
+          echo "Detected providers: $CSP_PROVIDERS"
+      
       - name: Configure AWS credentials
+        if: contains(steps.detect-csp.outputs.providers, 'aws')
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
+      
+      - name: Configure Azure credentials
+        if: contains(steps.detect-csp.outputs.providers, 'azure')
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Configure GCP credentials
+        if: contains(steps.detect-csp.outputs.providers, 'gcp')
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      
+      - name: Set up Cloud SDK
+        if: contains(steps.detect-csp.outputs.providers, 'gcp')
+        uses: google-github-actions/setup-gcloud@v1
 
       - name: Download Artifacts
         uses: actions/download-artifact@v4

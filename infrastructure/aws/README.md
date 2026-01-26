@@ -1,4 +1,4 @@
-# Terraform 인프라 코드
+# AWS 인프라 코드 (Terraform)
 
 이 디렉토리에는 AWS Bedrock Agent를 위한 인프라를 정의하는 Terraform 코드가 포함됩니다.
 

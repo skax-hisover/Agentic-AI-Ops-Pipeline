@@ -1,13 +1,23 @@
 # 인프라 배포 스크립트
 
-이 디렉토리에는 인프라 배포를 자동화하는 스크립트들이 포함됩니다.
+이 디렉토리에는 CSP별 인프라 배포를 자동화하는 스크립트들이 포함됩니다.
 
 ## 스크립트 목록
 
-### Terraform 관련
+### AWS 관련 (Terraform)
 
-- `deploy-infrastructure.sh`: Terraform을 사용하여 인프라 배포
-- `destroy-infrastructure.sh`: Terraform을 사용하여 인프라 삭제
+- `deploy-infrastructure.sh`: AWS Terraform을 사용하여 인프라 배포
+- `destroy-infrastructure.sh`: AWS Terraform을 사용하여 인프라 삭제
+
+### Azure 관련 (Bicep)
+
+- `deploy-azure-infrastructure.sh`: Azure Bicep을 사용하여 인프라 배포
+- `destroy-azure-infrastructure.sh`: Azure 리소스 그룹 삭제
+
+### GCP 관련 (Terraform)
+
+- `deploy-gcp-infrastructure.sh`: GCP Terraform을 사용하여 인프라 배포
+- `destroy-gcp-infrastructure.sh`: GCP Terraform을 사용하여 인프라 삭제
 
 ### Kubernetes 관련
 
@@ -15,7 +25,7 @@
 
 ## 사용 방법
 
-### Terraform 인프라 배포
+### AWS 인프라 배포 (Terraform)
 
 ```bash
 # Dev 환경 배포
@@ -28,11 +38,51 @@
 ./deploy-infrastructure.sh production
 ```
 
-### Terraform 인프라 삭제
+### AWS 인프라 삭제
 
 ```bash
 # 주의: 이 스크립트는 모든 인프라를 삭제합니다!
 ./destroy-infrastructure.sh dev
+```
+
+### Azure 인프라 배포 (Bicep)
+
+```bash
+# Dev 환경 배포
+./deploy-azure-infrastructure.sh dev
+
+# Staging 환경 배포
+./deploy-azure-infrastructure.sh staging
+
+# Production 환경 배포
+./deploy-azure-infrastructure.sh production
+```
+
+### Azure 인프라 삭제
+
+```bash
+# 주의: 이 스크립트는 리소스 그룹과 모든 리소스를 삭제합니다!
+./destroy-azure-infrastructure.sh dev
+```
+
+### GCP 인프라 배포 (Terraform)
+
+```bash
+# Dev 환경 배포
+./deploy-gcp-infrastructure.sh dev YOUR_PROJECT_ID
+
+# Staging 환경 배포
+./deploy-gcp-infrastructure.sh staging YOUR_PROJECT_ID
+
+# Production 환경 배포
+./deploy-gcp-infrastructure.sh production YOUR_PROJECT_ID
+```
+
+### GCP 인프라 삭제
+
+```bash
+# 주의: 이 스크립트는 모든 인프라를 삭제합니다!
+./destroy-gcp-infrastructure.sh dev YOUR_PROJECT_ID
 ```
 
 ### Kubernetes 배포
@@ -50,11 +100,32 @@
 
 ## 사전 요구사항
 
-### Terraform 스크립트
+### AWS 스크립트
 
 - Terraform >= 1.0 설치
 - AWS CLI 설정 및 자격증명
-- 적절한 AWS 권한
+- 적절한 AWS 권한 (IAM, S3, OpenSearch, Lambda, Bedrock 등)
+
+### Azure 스크립트
+
+- Azure CLI 설치 및 로그인
+- 적절한 Azure 권한 (Contributor 또는 Owner)
+- Bicep CLI (Azure CLI에 포함됨)
+
+### GCP 스크립트
+
+- Terraform >= 1.0 설치
+- gcloud CLI 설치 및 로그인
+- GCP 프로젝트 ID
+- 적절한 GCP 권한 (Storage Admin, Cloud Functions Admin, Service Account Admin 등)
+- 다음 API 활성화:
+  ```bash
+  gcloud services enable \
+    storage-api.googleapis.com \
+    cloudfunctions.googleapis.com \
+    cloudbuild.googleapis.com \
+    aiplatform.googleapis.com
+  ```
 
 ### Kubernetes 스크립트
 
@@ -66,8 +137,15 @@
 
 1. **Production 환경**: Production 환경에 배포하기 전에 반드시 Dev/Staging에서 테스트하세요.
 
-2. **Secret 관리**: `secret.yaml` 파일은 Git에 커밋하지 마세요.
+2. **Secret 관리**: `secret.yaml`, `terraform.tfvars` 파일은 Git에 커밋하지 마세요.
 
 3. **권한 확인**: 스크립트 실행 전에 필요한 권한이 있는지 확인하세요.
 
 4. **백업**: 인프라 삭제 전에 중요한 데이터를 백업하세요.
+
+5. **비용**: 각 CSP의 리소스는 비용이 발생할 수 있습니다. Dev 환경에서는 최소한의 리소스만 사용하세요.
+
+6. **CSP별 차이점**:
+   - **AWS**: Terraform 상태 파일은 S3 백엔드 사용 권장
+   - **Azure**: 리소스 그룹 단위로 관리, 삭제 시 전체 리소스 그룹 삭제
+   - **GCP**: Terraform 상태 파일은 GCS 백엔드 사용 권장, 프로젝트 ID 필수

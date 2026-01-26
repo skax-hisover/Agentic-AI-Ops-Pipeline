@@ -33,7 +33,7 @@ def invoke_agent(agent_def: Dict[str, Any], input_text: str, context: Dict[str, 
     #     bedrock = boto3.client('bedrock-runtime')
     #     response = bedrock.invoke_agent(...)
     # elif provider == "azure":
-    #     from azure.ai.openai import AzureOpenAI
+    #     from openai import AzureOpenAI  # openai 패키지에서 AzureOpenAI 클래스 제공
     #     client = AzureOpenAI(...)
     #     response = client.beta.threads.messages.create(...)
     

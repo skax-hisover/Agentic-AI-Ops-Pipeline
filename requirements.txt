@@ -22,9 +22,9 @@ requests>=2.31.0
 boto3>=1.28.0
 
 # Azure SDK (Azure Agent 배포 시 필요)
-# 사용 시: pip install azure-identity azure-ai-openai azure-identity azure-storage-blob
+# 사용 시: pip install azure-identity openai azure-storage-blob azure-search-documents
 azure-identity>=1.14.0
-azure-ai-openai>=1.0.0
+openai>=1.0.0                    # Azure OpenAI도 지원 (Azure OpenAI 엔드포인트와 함께 사용)
 azure-storage-blob>=12.19.0
 azure-search-documents>=11.4.0
 
@@ -42,12 +42,12 @@ google-cloud-functions>=1.15.0
 #
 # 특정 CSP만 설치:
 #   AWS만: pip install pyyaml jsonschema pytest boto3 requests
-#   Azure만: pip install pyyaml jsonschema pytest azure-identity azure-ai-openai azure-storage-blob azure-search-documents requests
+#   Azure만: pip install pyyaml jsonschema pytest azure-identity openai azure-storage-blob azure-search-documents requests
 #   GCP만: pip install pyyaml jsonschema pytest google-cloud-aiplatform google-cloud-storage google-cloud-functions requests
 #
 # 개발 환경 (테스트 포함):
 #   pip install -r requirements.txt
 #
 # 프로덕션 환경 (테스트 제외):
-#   pip install pyyaml jsonschema boto3 azure-identity azure-ai-openai azure-storage-blob azure-search-documents google-cloud-aiplatform google-cloud-storage google-cloud-functions requests
+#   pip install pyyaml jsonschema boto3 azure-identity openai azure-storage-blob azure-search-documents google-cloud-aiplatform google-cloud-storage google-cloud-functions requests
 # ============================================================================

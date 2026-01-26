@@ -60,7 +60,7 @@ def deploy_azure_agent(agent_def: Dict[str, Any], environment: str):
     # 실제 배포 로직은 Azure SDK를 사용하여 구현
     # 예시:
     # from azure.identity import DefaultAzureCredential
-    # from azure.ai.openai import AzureOpenAI
+    # from openai import AzureOpenAI  # openai 패키지에서 AzureOpenAI 클래스 제공
     # 
     # client = AzureOpenAI(
     #     azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),

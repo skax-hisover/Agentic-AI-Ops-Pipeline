@@ -79,8 +79,10 @@ jobs:
         uses: google-github-actions/auth@v1
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
-        - name: Set up Cloud SDK
-          uses: google-github-actions/setup-gcloud@v1
+      
+      - name: Set up Cloud SDK
+        if: contains(steps.detect-csp.outputs.providers, 'gcp')
+        uses: google-github-actions/setup-gcloud@v1
 
       # Build 파이프라인에서 생성한 agent-artifacts.tar.gz 다운로드
       - name: Download Artifacts

@@ -101,10 +101,8 @@ python scripts/build-agent.py --agent-dir agents/customer-support-agent
 
 ### 4. 평가 실행
 
-```bash
-python scripts/run-evaluation.py \
-  --dataset agents/customer-support-agent/tests/evaluation-dataset.json \
-  --agent agents/customer-support-agent
+```powershell
+python scripts/run-evaluation.py --dataset agents/customer-support-agent/tests/evaluation-dataset.json --agent agents/customer-support-agent
 ```
 
 ## CI/CD 파이프라인
